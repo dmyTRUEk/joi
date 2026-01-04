@@ -168,9 +168,9 @@ enum Function {
 	Argument,
 	Literal(Value),
 
-	Warbler(Box<Function>),
-	Cardinal(Box<Function>),
-	Starling(Box<[Function; 2]>),
+	Warbler(Box<[Function; 2]>),
+	Cardinal(Box<[Function; 3]>),
+	Starling(Box<[Function; 3]>),
 
 	Identity(Box<Function>),
 	Negate(Box<Function>),
@@ -220,14 +220,15 @@ impl Function {
 		use Function::*;
 		if tokens.is_empty() { return Argument }
 		macro_rules! a { () => (Box::new(Function::from_strs(tokens))) }
-		macro_rules! ab { () => (Box::new([Function::from_strs(tokens), Function::from_strs(tokens)])) }
+		macro_rules! ab { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens) ])) }
+		macro_rules! abc { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens) ])) }
 		match tokens.remove(0) {
 			"_" => Argument,
 			s if s.starts_with(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']) || s.contains(',') => Literal(Value::from(s)),
 
-			"w" => Warbler(a!()),
-			"c" => Cardinal(a!()),
-			"s" => Starling(ab!()),
+			"w" => Warbler(ab!()),
+			"c" => Cardinal(abc!()),
+			"s" => Starling(abc!()),
 
 			"id" => Identity(a!()),
 			"neg" => Negate(a!()),
@@ -256,27 +257,26 @@ impl Function {
 			Argument => args.remove(0),
 			Literal(v) => v.clone(),
 
-			// COMBINATORS 1
-			Warbler(a) => {
+			Warbler(fx) => {
+				let [f, x] = *fx.clone();
 				// assert_eq!(2, a.arity(), "warbler expected function with arity=2 but it is {}", a.arity());
-				args.insert(0, args[0].clone());
-				a.call_(args)
+				let x = x.call_(args);
+				f.call(vec![x.clone(), x])
 			}
-			Cardinal(a) => {
+			Cardinal(fxy) => {
+				let [f, x, y] = *fxy.clone();
 				// assert_eq!(2, a.arity(), "cardinal expected function with arity=2 but it is {}", a.arity());
-				args.swap(0, 1);
-				a.call_(args)
+				let x = x.call_(args);
+				let y = y.call_(args);
+				f.call(vec![y, x])
 			}
-			// COMBINATORS 2
-			Starling(ab) => {
-				let [a, b] = *ab.clone();
+			Starling(fgx) => {
+				let [f, g, x] = *fgx.clone();
 				// assert_eq!(2, a.arity(), "starling expected first function with arity=2 but it is {}", a.arity());
 				// assert_eq!(1, b.arity(), "starling expected second function with arity=1 but it is {}", b.arity());
-				let first_arg = args[0].clone();
-				let tmp_res = b.call_(args);
-				args.insert(0, tmp_res);
-				args.insert(0, first_arg);
-				a.call_(args)
+				let x = x.call_(args);
+				let gx = g.call(vec![x.clone()]);
+				f.call(vec![x, gx])
 			}
 
 			// FUNCTIONS ARITY 1
@@ -315,17 +315,17 @@ impl Function {
 					_ => todo!()
 				}
 			}
-			Map(ab) => {
-				let [a, b] = *ab.clone();
-				match b.call_(args) {
+			Map(fx) => {
+				let [f, x] = *fx.clone();
+				match x.call_(args) {
 					Array(arr) => {
 						Array(
 							arr.into_iter()
-								.map(|el| a.call(vec![el]))
+								.map(|el| f.call(vec![el]))
 								.collect()
 						)
 					}
-					Int(_) => panic!()
+					Int(_) => panic!("cant use map on int")
 				}
 			}
 			Subtract(ab) => {
@@ -459,6 +459,13 @@ mod eval {
 			assert_eq!(
 				Value::from([vec![1,2,3,4], vec![1,2,3,4,5]]),
 				eval("3,1,4,2__4,5,1,3,2 :: map sort")
+			)
+		}
+		#[test]
+		fn add1() {
+			assert_eq!(
+				Value::from([2,3,4]),
+				eval("1,2,3 :: map add 1")
 			)
 		}
 	}
