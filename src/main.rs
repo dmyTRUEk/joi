@@ -6,6 +6,8 @@
 	unused_variables,
 )]
 
+use std::fmt::Display;
+
 use clap::Parser;
 
 
@@ -28,6 +30,9 @@ use clap::Parser;
 	",
 )]
 struct CliArgs {
+	#[arg(short='d', long, default_value_t=false)]
+	debug: bool,
+
 	// TODO?
 	// #[arg(short='i', long, default_value_t=false)]
 	// input_at_the_end: bool,
@@ -41,11 +46,12 @@ struct CliArgs {
 
 fn main() {
 	let CliArgs {
+		debug,
 		program,
 	} = CliArgs::parse();
 
-	let result = eval(&program.join(" "));
-	println!("result: {result:?}");
+	let result = eval_(&program.join(" "), debug);
+	println!("result: {result}");
 }
 
 
@@ -57,11 +63,44 @@ enum Value {
 	Int(i64),
 	Array(Vec<Value>),
 }
+impl Value {
+	fn deep_apply(self, f: fn(i64) -> Value) -> Value {
+		use Value::*;
+		match self {
+			Int(n) => f(n),
+			Array(arr) => Array(
+				arr.into_iter()
+					.map(|el| el.deep_apply(f))
+					.collect()
+			)
+		}
+	}
+}
 impl From<&str> for Value {
 	fn from(s: &str) -> Self {
 		use Value::*;
 		// dbg!(s);
-		if s.contains(',') {
+		let s = s.trim();
+		if s.is_empty() { return Array(vec![]) }
+		if s.contains("____") {
+			Array(
+				s
+					.split("____")
+					.filter(|el| !el.is_empty())
+					.map(Value::from)
+					.collect()
+			)
+		}
+		else if s.contains("__") {
+			Array(
+				s
+					.split("__")
+					// .filter(|el| !el.is_empty())
+					.map(Value::from)
+					.collect()
+			)
+		}
+		else if s.contains(',') {
 			Array(
 				s
 					.split(',')
@@ -80,26 +119,68 @@ impl From<&str> for Value {
 		}
 	}
 }
+impl<const N: usize> From<[i64; N]> for Value {
+	fn from(arr: [i64; N]) -> Self {
+		use Value::*;
+		Array(arr.map(Int).to_vec())
+	}
+}
+impl From<Vec<i64>> for Value {
+	fn from(arr: Vec<i64>) -> Self {
+		use Value::*;
+		Array(arr.iter().map(|n| Int(*n)).collect())
+	}
+}
+impl<const N: usize> From<[Vec<i64>; N]> for Value {
+	fn from(arr: [Vec<i64>; N]) -> Self {
+		use Value::*;
+		Array(arr.map(Value::from).to_vec())
+	}
+}
+impl Display for Value {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		use Value::*;
+		match self {
+			Int(n) => {
+				write!(f, "{n}")
+			}
+			Array(arr) => {
+				write!(f, "[")?;
+				let mut it = arr.iter();
+				if let Some(el) = it.next() {
+					write!(f, "{el}")?;
+					for el in it {
+						write!(f, ", {el}")?;
+					}
+				}
+				write!(f, "]")
+			}
+		}
+	}
+}
 
 
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Function {
 	Argument,
 	Literal(Value),
 
-	Warbler { a: Box<Function> },
-	Cardinal { a: Box<Function> },
-	Starling { ab: Box<[Function; 2]> },
+	Warbler(Box<Function>),
+	Cardinal(Box<Function>),
+	Starling(Box<[Function; 2]>),
 
-	Identity { a: Box<Function> },
-	Negate { a: Box<Function> },
-	Square { a: Box<Function> },
+	Identity(Box<Function>),
+	Negate(Box<Function>),
+	Range(Box<Function>),
+	Sort(Box<Function>),
+	Square(Box<Function>),
 
-	Add { ab: Box<[Function; 2]> },
-	Subtract { ab: Box<[Function; 2]> },
+	Add(Box<[Function; 2]>),
+	Map(Box<[Function; 2]>),
+	Subtract(Box<[Function; 2]>),
 }
 impl Function {
 	fn from_str(tokens: &str) -> Self {
@@ -112,6 +193,29 @@ impl Function {
 		f
 	}
 
+	// TODO?
+	// fn arity(&self) -> u8 {
+	// 	use Function::*;
+	// 	match self {
+	// 		| Argument
+	// 		| Literal(_)
+	// 		=> 0,
+	// 		| Cardinal(_) // ?
+	// 		=> 1,
+	// 		| Warbler(_) // ???
+	// 		| Starling(_) // ?
+	// 		=> 2,
+	// 		| Identity(_)
+	// 		| Negate(_)
+	// 		| Sort(_)
+	// 		| Square(_)
+	// 		=> 1,
+	// 		| Add(_)
+	// 		| Subtract(_)
+	// 		=> 2,
+	// 	}
+	// }
+
 	fn from_strs(tokens: &mut Vec<&str>) -> Self {
 		use Function::*;
 		if tokens.is_empty() { return Argument }
@@ -121,47 +225,53 @@ impl Function {
 			"_" => Argument,
 			s if s.starts_with(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']) || s.contains(',') => Literal(Value::from(s)),
 
-			"w" => Warbler { a: a!() },
-			"c" => Cardinal { a: a!() },
-			"s" => Starling { ab: ab!() },
+			"w" => Warbler(a!()),
+			"c" => Cardinal(a!()),
+			"s" => Starling(ab!()),
 
-			"id" => Identity { a: a!() },
-			"neg" => Negate { a: a!() },
-			"sq" => Square { a: a!() },
+			"id" => Identity(a!()),
+			"neg" => Negate(a!()),
+			"range" => Range(a!()),
+			"sort" => Sort(a!()),
+			"sq" => Square(a!()),
 
-			"add" => Add { ab: ab!() },
-			"sub" => Subtract { ab: ab!() },
+			"add" => Add(ab!()),
+			"map" => Map(ab!()),
+			"sub" => Subtract(ab!()),
 
 			t => panic!("unknown token: `{t}`")
 		}
 	}
 
-
-	fn call(self, mut args: Vec<Value>) -> Value {
+	fn call(&self, mut args: Vec<Value>) -> Value {
 		let result = self.call_(&mut args);
 		assert!(args.is_empty(), "NOT ALL ARGS ARE USED!");
 		result
 	}
-	fn call_(self, args: &mut Vec<Value>) -> Value {
+	fn call_(&self, args: &mut Vec<Value>) -> Value {
 		use Function::*;
 		use Value::*;
 		match self {
 			// 0
 			Argument => args.remove(0),
-			Literal(v) => v,
+			Literal(v) => v.clone(),
 
-			// COMBINATORS ARITY 1
-			Warbler { a } => {
+			// COMBINATORS 1
+			Warbler(a) => {
+				// assert_eq!(2, a.arity(), "warbler expected function with arity=2 but it is {}", a.arity());
 				args.insert(0, args[0].clone());
 				a.call_(args)
 			}
-			Cardinal { a } => {
+			Cardinal(a) => {
+				// assert_eq!(2, a.arity(), "cardinal expected function with arity=2 but it is {}", a.arity());
 				args.swap(0, 1);
 				a.call_(args)
 			}
-			// COMBINATORS ARITY 2
-			Starling { ab } => {
-				let [a, b] = *ab;
+			// COMBINATORS 2
+			Starling(ab) => {
+				let [a, b] = *ab.clone();
+				// assert_eq!(2, a.arity(), "starling expected first function with arity=2 but it is {}", a.arity());
+				// assert_eq!(1, b.arity(), "starling expected second function with arity=1 but it is {}", b.arity());
 				let first_arg = args[0].clone();
 				let tmp_res = b.call_(args);
 				args.insert(0, tmp_res);
@@ -170,32 +280,56 @@ impl Function {
 			}
 
 			// FUNCTIONS ARITY 1
-			Identity { a } => {
+			Identity(a) => {
 				a.call_(args)
 			}
-			Negate { a } => {
+			Negate(a) => {
+				fn f(n: i64) -> Value { Int(-n) }
+				a.call_(args).deep_apply(f)
+			}
+			Range(a) => {
+				fn f(n: i64) -> Value { Array( (1..=n).map(Int).collect() ) }
+				a.call_(args).deep_apply(f)
+			}
+			Sort(a) => {
 				match a.call_(args) {
-					Int(n) => Int(-n),
-					Array(_) => todo!()
+					Array(mut arr) => {
+						arr.sort();
+						Array(arr)
+					}
+					Int(_) => panic!("cant call sort on int")
 				}
 			}
-			Square { a } => {
+			Square(a) => {
 				match a.call_(args) {
 					Int(n) => Int(n*n),
-					Array(_) => todo!()
+					arr @ Array(_) => arr.deep_apply(|n| Int(n*n))
 				}
 			}
 
 			// FUNCTIONS ARITY 2
-			Add { ab } => {
-				let [a, b] = *ab;
+			Add(ab) => {
+				let [a, b] = *ab.clone();
 				match (a.call_(args), b.call_(args)) {
 					(Int(a), Int(b)) => Int(a + b),
 					_ => todo!()
 				}
 			}
-			Subtract { ab } => {
-				let [a, b] = *ab;
+			Map(ab) => {
+				let [a, b] = *ab.clone();
+				match b.call_(args) {
+					Array(arr) => {
+						Array(
+							arr.into_iter()
+								.map(|el| a.call(vec![el]))
+								.collect()
+						)
+					}
+					Int(_) => panic!()
+				}
+			}
+			Subtract(ab) => {
+				let [a, b] = *ab.clone();
 				match (a.call_(args), b.call_(args)) {
 					(Int(a), Int(b)) => Int(a - b),
 					_ => todo!()
@@ -209,7 +343,12 @@ impl Function {
 
 
 
+#[allow(dead_code)] // its used for testing
 fn eval(program: &str) -> Value {
+	eval_(program, true)
+}
+
+fn eval_(program: &str, debug_fn_parsing: bool) -> Value {
 	let tmp = program.split("::").collect::<Vec<_>>();
 	let [args, fn_tokens] = tmp.as_slice() else { panic!() };
 	let args: Vec<Value> = args
@@ -220,7 +359,7 @@ fn eval(program: &str) -> Value {
 	// dbg!(&args);
 	// dbg!(fn_tokens);
 	let function = Function::from_str(fn_tokens);
-	dbg!(&function);
+	if debug_fn_parsing { dbg!(&function); }
 	function.call(args)
 }
 
@@ -228,122 +367,100 @@ fn eval(program: &str) -> Value {
 
 
 
+#[allow(non_snake_case)]
 #[cfg(test)]
 mod eval {
 	use super::*;
 	use Value::*;
-	#[test]
-	fn arg_implicit() {
-		assert_eq!(
-			Int(2),
-			eval("2 ::")
-		)
-	}
-	#[test]
-	fn arg_explicit() {
-		assert_eq!(
-			Int(2),
-			eval("2 :: _")
-		)
-	}
-	#[test]
-	fn const_2() {
-		assert_eq!(
-			Int(2),
-			eval(":: 2")
-		)
-	}
-	#[test]
-	fn identity() {
-		assert_eq!(
-			Int(2),
-			eval("2 :: id")
-		)
-	}
-	#[test]
-	fn neg() {
-		assert_eq!(
-			Int(-2),
-			eval("2 :: neg")
-		)
-	}
-	#[test]
-	fn neg_neg() {
-		assert_eq!(
-			Int(-(-2)),
-			eval("2 :: neg neg")
-		)
-	}
-	#[test]
-	fn square() {
-		assert_eq!(
-			Int(3*3),
-			eval("3 :: sq")
-		)
-	}
-	#[test]
-	fn add() {
-		assert_eq!(
-			Int(2+2),
-			eval("2 2 :: add")
-		)
-	}
-	#[test]
-	fn sub() {
-		assert_eq!(
-			Int(2-3),
-			eval("2 3 :: sub")
-		)
-	}
-	#[test]
-	fn neg_add() {
-		assert_eq!(
-			Int(-(2+2)),
-			eval("2 2 :: neg add")
-		)
-	}
-	#[test]
-	fn add_neg_arg_neg() {
-		assert_eq!(
-			Int(-2-3),
-			eval("2 3 :: add neg _ neg")
-		)
+
+	mod argument {
+		use super::*;
+		#[test] fn implicit() { assert_eq!(Int(2), eval("2 ::")) }
+		#[test] fn explicit() { assert_eq!(Int(2), eval("2 :: _")) }
 	}
 
-	#[test]
-	fn warbler() {
-		assert_eq!(
-			Int(2+2),
-			eval("2 :: w add")
-		)
+	mod arr {
+		use super::*;
+		mod _1d {
+			use super::*;
+			#[test] fn _0() { assert_eq!(Array(vec![]), eval(", ::")) }
+			#[test] fn _1() { assert_eq!(Value::from([4]), eval("4, ::")) }
+			#[test] fn _1_() { assert_eq!(Value::from([4]), eval(",4 ::")) }
+			#[test] fn _2() { assert_eq!(Value::from([4,5]), eval("4,5 ::")) }
+			#[test] fn _2_() { assert_eq!(Value::from([4,5]), eval("4,5, ::")) }
+			#[test] fn _3() { assert_eq!(Value::from([4,5,6]), eval("4,5,6 ::")) }
+		}
+		mod _2d {
+			use super::*;
+			#[test] fn _0_0() { assert_eq!(Value::from([vec![], vec![]]), eval("__ ::")) }
+			#[test] fn _1_1() { assert_eq!(Value::from([vec![3], vec![4]]), eval("3,__4, ::")) }
+			#[test] fn _2_2() { assert_eq!(Value::from([vec![3,4], vec![5,6]]), eval("3,4__5,6 ::")) }
+		}
+		mod _3d {
+			use super::*;
+			#[test] fn _2_2__2_2() { assert_eq!(Array(vec![Value::from([vec![3,4], vec![5,6]]), Value::from([vec![7,8], vec![9,0]])]), eval("3,4__5,6____7,8__9,0 ::")) }
+		}
 	}
-	#[test]
-	fn warbler_() {
-		assert_eq!(
-			Int(2+2),
-			eval("2 :: add w")
-		)
+
+	#[test] fn const_2() { assert_eq!(Int(2), eval(":: 2")) }
+	#[test] fn identity() { assert_eq!(Int(2), eval("2 :: id")) }
+
+	mod neg {
+		use super::*;
+		#[test] fn int() { assert_eq!(Int(-2), eval("2 :: neg")) }
+		#[test] fn neg_int() { assert_eq!(Int(-(-2)), eval("2 :: neg neg")) }
+		#[test] fn array() { assert_eq!(Value::from([-1,-2,-3]), eval("1,2,3 :: neg")) }
 	}
-	#[test]
-	fn cardinal() {
-		assert_eq!(
-			Int(3-2),
-			eval("2 3 :: c sub")
-		)
+
+	#[test] fn square() { assert_eq!(Int(3*3), eval("3 :: sq")) }
+	#[test] fn square_arr() { assert_eq!(Value::from([1,4,9]), eval("1,2,3 :: sq")) }
+
+	mod add {
+		use super::*;
+		#[test] fn int_int() { assert_eq!(Int(2+2), eval("2 2 :: add")) }
+		#[test] fn arr_int() { assert_eq!(Int(2+2), eval("2 2 :: add")) }
 	}
-	#[test]
-	fn starling_add_sq() {
-		assert_eq!(
-			Int(3 + 3*3),
-			eval("3 :: s add sq")
-		)
+
+	#[test] fn sub_int_int() { assert_eq!(Int(2-3), eval("2 3 :: sub")) }
+	#[test] fn neg_add() { assert_eq!(Int(-(2+2)), eval("2 2 :: neg add")) }
+	#[test] fn add_neg_arg_neg() { assert_eq!(Int(-2-3), eval("2 3 :: add neg _ neg")) }
+
+	mod warbler {
+		use super::*;
+		#[test] fn w_add() { assert_eq!(Int(2+2), eval("2 :: w add")) }
 	}
-	#[test]
-	fn starling_sub_arg_arg_sq() {
-		assert_eq!(
-			Int(3 - 3*3),
-			eval("3 :: s sub _ _ sq")
-		)
+
+	mod cardinal {
+		use super::*;
+		#[test] fn sub() { assert_eq!(Int(3-2), eval("2 3 :: c sub")) }
+	}
+
+	mod starling {
+		use super::*;
+		#[test] fn sub_arg_arg_sq() { assert_eq!(Int(3 - 3*3), eval("3 :: s sub _ _ sq")) }
+	}
+
+	mod sort {
+		use super::*;
+		#[test] fn arr() { assert_eq!(Value::from([1,2,3,4,5]), eval("4,5,2,3,1 :: sort")) }
+		#[test] fn arr_of_arr() { assert_eq!(Array(vec![Int(1), Int(9), Array(vec![]), Value::from([2]), Value::from([2,3,1]), Value::from([8])]), eval("__,2__2,3,1__8,__9__1 :: sort")) }
+	}
+
+	mod range {
+		use super::*;
+		#[test] fn int() { assert_eq!(Value::from([1,2,3,4]), eval("4 :: range")) }
+		#[test] fn arr() { assert_eq!(Value::from([vec![1,2,3], vec![1,2,3,4]]), eval("3,4 :: range")) }
+	}
+
+	mod map {
+		use super::*;
+		#[test]
+		fn sort() {
+			assert_eq!(
+				Value::from([vec![1,2,3,4], vec![1,2,3,4,5]]),
+				eval("3,1,4,2__4,5,1,3,2 :: map sort")
+			)
+		}
 	}
 }
 
