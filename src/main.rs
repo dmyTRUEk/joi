@@ -173,12 +173,15 @@ enum Function {
 	Starling(Box<[Function; 3]>),
 
 	Identity(Box<Function>),
+	IsEven(Box<Function>),
 	Negate(Box<Function>),
+	Not(Box<Function>),
 	Range(Box<Function>),
 	Sort(Box<Function>),
 	Square(Box<Function>),
 
 	Add(Box<[Function; 2]>),
+	Filter(Box<[Function; 2]>), // TODO: make two: filter-leave and filter-remove or something like that
 	Map(Box<[Function; 2]>),
 	Subtract(Box<[Function; 2]>),
 }
@@ -231,12 +234,15 @@ impl Function {
 			"s" => Starling(abc!()),
 
 			"id" => Identity(a!()),
+			"is-even" => IsEven(a!()),
 			"neg" => Negate(a!()),
+			"not" => Not(a!()),
 			"range" => Range(a!()),
 			"sort" => Sort(a!()),
 			"sq" => Square(a!()),
 
 			"add" => Add(ab!()),
+			"filter" => Filter(ab!()),
 			"map" => Map(ab!()),
 			"sub" => Subtract(ab!()),
 
@@ -283,13 +289,21 @@ impl Function {
 			Identity(a) => {
 				a.call_(args)
 			}
+			IsEven(a) => {
+				a.call_(args).deep_apply(|n| Int((n % 2 == 0) as i64))
+			}
 			Negate(a) => {
-				fn f(n: i64) -> Value { Int(-n) }
-				a.call_(args).deep_apply(f)
+				a.call_(args).deep_apply(|n| Int(-n))
+			}
+			Not(a) => {
+				a.call_(args).deep_apply(|b| Int(match b {
+					0 => 1,
+					1 => 0,
+					n => panic!("cant apply boolean not on int: {n}. (expected \"boolean\" aka 0 or 1)")
+				}))
 			}
 			Range(a) => {
-				fn f(n: i64) -> Value { Array( (1..=n).map(Int).collect() ) }
-				a.call_(args).deep_apply(f)
+				a.call_(args).deep_apply(|n| Array( (1..=n).map(Int).collect() ))
 			}
 			Sort(a) => {
 				match a.call_(args) {
@@ -313,6 +327,23 @@ impl Function {
 				match (a.call_(args), b.call_(args)) {
 					(Int(a), Int(b)) => Int(a + b),
 					_ => todo!()
+				}
+			}
+			Filter(fx) => {
+				let [f, x] = *fx.clone();
+				match x.call_(args) {
+					Array(arr) => {
+						Array(
+							arr.into_iter()
+								.filter(|el| match f.call(vec![el.clone()]) {
+									Int(0) => false,
+									Int(1) => true,
+									n => panic!("cant filter by int: {n}. (expected \"boolean\" aka 0 or 1)")
+								})
+								.collect()
+						)
+					}
+					Int(_) => panic!("cant use filter on int")
 				}
 			}
 			Map(fx) => {
@@ -468,6 +499,13 @@ mod eval {
 				eval("1,2,3 :: map add 1")
 			)
 		}
+	}
+
+	mod filter {
+		use super::*;
+		#[test] fn is_even() { assert_eq!(Value::from([2,4,6,8]), eval("1,2,3,4,5,6,7,8,9 :: filter is-even")) }
+		#[test] fn not_is_even() { assert_eq!(Value::from([1,3,5,7,9]), eval("1,2,3,4,5,6,7,8,9 :: filter not is-even")) }
+		#[test] fn is_even_via_range() { assert_eq!(Value::from([2,4,6,8]), eval("9 :: filter is-even _ range")) }
 	}
 }
 
