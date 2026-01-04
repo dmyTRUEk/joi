@@ -184,6 +184,7 @@ enum Function {
 	Add(Box<[Function; 2]>),
 	Filter(Box<[Function; 2]>), // TODO: make two: filter-leave and filter-remove or something like that
 	Map(Box<[Function; 2]>),
+	Reduce(Box<[Function; 2]>),
 	Subtract(Box<[Function; 2]>),
 }
 impl Function {
@@ -246,6 +247,7 @@ impl Function {
 			"add" => Add(ab!()),
 			"filter" => Filter(ab!()),
 			"map" => Map(ab!()),
+			"reduce" => Reduce(ab!()),
 			"sub" => Subtract(ab!()),
 
 			t => panic!("unknown token: `{t}`")
@@ -362,6 +364,17 @@ impl Function {
 						)
 					}
 					Int(_) => panic!("cant use map on int")
+				}
+			}
+			Reduce(fx) => {
+				let [f, x] = *fx.clone();
+				match x.call_(args) {
+					Array(arr) => {
+						arr.into_iter()
+							.reduce(|acc, el| f.call(vec![acc, el]))
+							.unwrap()
+					}
+					Int(_) => panic!("cant use reduce on int")
 				}
 			}
 			Subtract(ab) => {
@@ -513,6 +526,12 @@ mod eval {
 		#[test] fn is_positive() { assert_eq!(Value::from([1,2]), eval("-2,-1,0,1,2 :: filter is-pos")) }
 		#[test] fn not_is_positive() { assert_eq!(Value::from([-2,-1,0]), eval("-2,-1,0,1,2 :: filter not is-pos")) }
 		#[test] fn is_even_via_range() { assert_eq!(Value::from([2,4,6,8]), eval("9 :: filter is-even _ range")) }
+	}
+
+	mod reduce {
+		use super::*;
+		#[test] fn add_aka_sum() { assert_eq!(Int(10), eval("1,2,3,4 :: reduce add")) }
+		#[test] fn add_aka_sum_via_range() { assert_eq!(Int(10), eval("4 :: reduce add _ _ range")) }
 	}
 }
 
