@@ -118,7 +118,7 @@ impl Function {
 		macro_rules! a { () => (Box::new(Function::from_strs(tokens))) }
 		macro_rules! ab { () => (Box::new([Function::from_strs(tokens), Function::from_strs(tokens)])) }
 		match tokens.remove(0) {
-			"." => Argument,
+			"_" => Argument,
 			s if s.starts_with(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']) || s.contains(',') => Literal(Value::from(s)),
 
 			"w" => Warbler { a: a!() },
@@ -243,7 +243,7 @@ mod eval {
 	fn arg_explicit() {
 		assert_eq!(
 			Int(2),
-			eval("2 :: .")
+			eval("2 :: _")
 		)
 	}
 	#[test]
@@ -306,7 +306,7 @@ mod eval {
 	fn add_neg_arg_neg() {
 		assert_eq!(
 			Int(-2-3),
-			eval("2 3 :: add neg . neg")
+			eval("2 3 :: add neg _ neg")
 		)
 	}
 
@@ -342,7 +342,7 @@ mod eval {
 	fn starling_sub_arg_arg_sq() {
 		assert_eq!(
 			Int(3 - 3*3),
-			eval("3 :: s sub . . sq")
+			eval("3 :: s sub _ _ sq")
 		)
 	}
 }
