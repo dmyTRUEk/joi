@@ -174,6 +174,7 @@ enum Function {
 
 	Identity(Box<Function>),
 	IsEven(Box<Function>),
+	IsPositive(Box<Function>),
 	Negate(Box<Function>),
 	Not(Box<Function>),
 	Range(Box<Function>),
@@ -235,6 +236,7 @@ impl Function {
 
 			"id" => Identity(a!()),
 			"is-even" => IsEven(a!()),
+			"is-pos" => IsPositive(a!()),
 			"neg" => Negate(a!()),
 			"not" => Not(a!()),
 			"range" => Range(a!()),
@@ -291,6 +293,9 @@ impl Function {
 			}
 			IsEven(a) => {
 				a.call_(args).deep_apply(|n| Int((n % 2 == 0) as i64))
+			}
+			IsPositive(a) => {
+				a.call_(args).deep_apply(|n| Int((n > 0) as i64))
 			}
 			Negate(a) => {
 				a.call_(args).deep_apply(|n| Int(-n))
@@ -505,6 +510,8 @@ mod eval {
 		use super::*;
 		#[test] fn is_even() { assert_eq!(Value::from([2,4,6,8]), eval("1,2,3,4,5,6,7,8,9 :: filter is-even")) }
 		#[test] fn not_is_even() { assert_eq!(Value::from([1,3,5,7,9]), eval("1,2,3,4,5,6,7,8,9 :: filter not is-even")) }
+		#[test] fn is_positive() { assert_eq!(Value::from([1,2]), eval("-2,-1,0,1,2 :: filter is-pos")) }
+		#[test] fn not_is_positive() { assert_eq!(Value::from([-2,-1,0]), eval("-2,-1,0,1,2 :: filter not is-pos")) }
 		#[test] fn is_even_via_range() { assert_eq!(Value::from([2,4,6,8]), eval("9 :: filter is-even _ range")) }
 	}
 }
