@@ -186,6 +186,8 @@ enum Function {
 	Map(Box<[Function; 2]>),
 	Reduce(Box<[Function; 2]>),
 	Subtract(Box<[Function; 2]>),
+
+	If(Box<[Function; 3]>),
 }
 impl Function {
 	fn from_str(tokens: &str) -> Self {
@@ -249,6 +251,8 @@ impl Function {
 			"map" => Map(ab!()),
 			"reduce" => Reduce(ab!()),
 			"sub" => Subtract(ab!()),
+
+			"if" => If(abc!()),
 
 			t => panic!("unknown token: `{t}`")
 		}
@@ -382,6 +386,21 @@ impl Function {
 				match (a.call_(args), b.call_(args)) {
 					(Int(a), Int(b)) => Int(a - b),
 					_ => todo!()
+				}
+			}
+
+			// FUNCTIONS ARITY 3
+			If(abc) => {
+				let [a, b, c] = *abc.clone();
+				let cond = a.call_(args);
+				match cond {
+					Int(1) => {
+						b.call_(args)
+					}
+					Int(0) => {
+						c.call_(args)
+					}
+					_ => panic!("condition is not \"boolean\" aka 0 or 1")
 				}
 			}
 		}
@@ -532,6 +551,14 @@ mod eval {
 		use super::*;
 		#[test] fn add_aka_sum() { assert_eq!(Int(10), eval("1,2,3,4 :: reduce add")) }
 		#[test] fn add_aka_sum_via_range() { assert_eq!(Int(10), eval("4 :: reduce add _ _ range")) }
+	}
+
+	mod if_ {
+		use super::*;
+		#[test] fn _100_is_even__add_10__sub_10() { assert_eq!(Int(100+10), eval("42 100 :: if is-even _ add 10 _ sub _ 10")) }
+		#[test] fn _101_is_even__add_10__sub_10() { assert_eq!(Int(100-10), eval("43 100 :: if is-even _ add 10 _ sub _ 10")) }
+		#[test] fn _100_w_is_even__add_10__sub_10() { assert_eq!(Int(100+10), eval("100 :: w if is-even _ add 10 _ sub _ 10")) }
+		#[test] fn _101_w_is_even__add_10__sub_10() { assert_eq!(Int(101-10), eval("101 :: w if is-even _ add 10 _ sub _ 10")) }
 	}
 }
 
