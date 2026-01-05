@@ -183,6 +183,12 @@ enum Function {
 
 	Add(Box<[Function; 2]>),
 	Filter(Box<[Function; 2]>), // TODO: make two: filter-leave and filter-remove or something like that
+	IsEqual(Box<[Function; 2]>),
+	IsGreater(Box<[Function; 2]>),
+	IsGreaterEqual(Box<[Function; 2]>),
+	IsLess(Box<[Function; 2]>),
+	IsLessEqual(Box<[Function; 2]>),
+	IsNotEqual(Box<[Function; 2]>),
 	Map(Box<[Function; 2]>),
 	Reduce(Box<[Function; 2]>),
 	Subtract(Box<[Function; 2]>),
@@ -247,6 +253,12 @@ impl Function {
 			"sq" => Square(a!()),
 
 			"add" => Add(ab!()),
+			"!=" => IsNotEqual(ab!()),
+			"<" => IsLess(ab!()),
+			"<=" => IsLessEqual(ab!()),
+			"==" => IsEqual(ab!()),
+			">" => IsGreater(ab!()),
+			">=" => IsGreaterEqual(ab!()),
 			"filter" => Filter(ab!()),
 			"map" => Map(ab!()),
 			"reduce" => Reduce(ab!()),
@@ -338,6 +350,48 @@ impl Function {
 				match (a.call_(args), b.call_(args)) {
 					(Int(a), Int(b)) => Int(a + b),
 					_ => todo!()
+				}
+			}
+			IsEqual(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.call_(args), b.call_(args)) {
+					(Int(a), Int(b)) => Int((a == b) as i64),
+					_ => unimplemented!()
+				}
+			}
+			IsGreater(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.call_(args), b.call_(args)) {
+					(Int(a), Int(b)) => Int((a > b) as i64),
+					_ => unimplemented!()
+				}
+			}
+			IsGreaterEqual(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.call_(args), b.call_(args)) {
+					(Int(a), Int(b)) => Int((a >= b) as i64),
+					_ => unimplemented!()
+				}
+			}
+			IsLess(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.call_(args), b.call_(args)) {
+					(Int(a), Int(b)) => Int((a < b) as i64),
+					_ => unimplemented!()
+				}
+			}
+			IsLessEqual(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.call_(args), b.call_(args)) {
+					(Int(a), Int(b)) => Int((a <= b) as i64),
+					_ => unimplemented!()
+				}
+			}
+			IsNotEqual(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.call_(args), b.call_(args)) {
+					(Int(a), Int(b)) => Int((a != b) as i64),
+					_ => unimplemented!()
 				}
 			}
 			Filter(fx) => {
@@ -559,6 +613,43 @@ mod eval {
 		#[test] fn _101_is_even__add_10__sub_10() { assert_eq!(Int(100-10), eval("43 100 :: if is-even _ add 10 _ sub _ 10")) }
 		#[test] fn _100_w_is_even__add_10__sub_10() { assert_eq!(Int(100+10), eval("100 :: w if is-even _ add 10 _ sub _ 10")) }
 		#[test] fn _101_w_is_even__add_10__sub_10() { assert_eq!(Int(101-10), eval("101 :: w if is-even _ add 10 _ sub _ 10")) }
+	}
+
+	mod is_equal {
+		use super::*;
+		#[test] fn _10_10() { assert_eq!(Int(1), eval("10 10 :: ==")) }
+		#[test] fn _10_99() { assert_eq!(Int(0), eval("10 99 :: ==")) }
+		#[test] fn _99_10() { assert_eq!(Int(0), eval("99 10 :: ==")) }
+	}
+	mod is_greater {
+		use super::*;
+		#[test] fn _10_10() { assert_eq!(Int(0), eval("10 10 :: >")) }
+		#[test] fn _10_99() { assert_eq!(Int(0), eval("10 99 :: >")) }
+		#[test] fn _99_10() { assert_eq!(Int(1), eval("99 10 :: >")) }
+	}
+	mod is_greater_equal {
+		use super::*;
+		#[test] fn _10_10() { assert_eq!(Int(1), eval("10 10 :: >=")) }
+		#[test] fn _10_99() { assert_eq!(Int(0), eval("10 99 :: >=")) }
+		#[test] fn _99_10() { assert_eq!(Int(1), eval("99 10 :: >=")) }
+	}
+	mod is_less {
+		use super::*;
+		#[test] fn _10_10() { assert_eq!(Int(0), eval("10 10 :: <")) }
+		#[test] fn _10_99() { assert_eq!(Int(1), eval("10 99 :: <")) }
+		#[test] fn _99_10() { assert_eq!(Int(0), eval("99 10 :: <")) }
+	}
+	mod is_less_equal {
+		use super::*;
+		#[test] fn _10_10() { assert_eq!(Int(1), eval("10 10 :: <=")) }
+		#[test] fn _10_99() { assert_eq!(Int(1), eval("10 99 :: <=")) }
+		#[test] fn _99_10() { assert_eq!(Int(0), eval("99 10 :: <=")) }
+	}
+	mod is_not_equal {
+		use super::*;
+		#[test] fn _10_10() { assert_eq!(Int(0), eval("10 10 :: !=")) }
+		#[test] fn _10_99() { assert_eq!(Int(1), eval("10 99 :: !=")) }
+		#[test] fn _99_10() { assert_eq!(Int(1), eval("99 10 :: !=")) }
 	}
 }
 
