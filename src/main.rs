@@ -182,6 +182,7 @@ enum Function {
 	Square(Box<Function>),
 
 	Add(Box<[Function; 2]>),
+	At(Box<[Function; 2]>),
 	Filter(Box<[Function; 2]>), // TODO: make two: filter-leave and filter-remove or something like that
 	IsEqual(Box<[Function; 2]>),
 	IsGreater(Box<[Function; 2]>),
@@ -253,6 +254,7 @@ impl Function {
 			"sq" => Square(a!()),
 
 			"add" => Add(ab!()),
+			"at" => At(ab!()),
 			"!=" => IsNotEqual(ab!()),
 			"<" => IsLess(ab!()),
 			"<=" => IsLessEqual(ab!()),
@@ -350,6 +352,19 @@ impl Function {
 				match (a.call_(args), b.call_(args)) {
 					(Int(a), Int(b)) => Int(a + b),
 					_ => todo!()
+				}
+			}
+			At(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.call_(args), b.call_(args)) {
+					(Int(_a), Int(_b)) => panic!("cant index into int"),
+					(Array(arr), Int(i)) => arr[usize::try_from(i).unwrap()].clone(),
+					// (Int(i), Array(arr)) => arr[usize::try_from(i).unwrap()].clone(), // TODO: enable?
+					(Array(arr), Array(i)) => Array(i.iter().map(|i| match i {
+						Int(i) => arr[usize::try_from(*i).unwrap()].clone(),
+						_ => panic!()
+					}).collect()),
+					_ => panic!()
 				}
 			}
 			IsEqual(ab) => {
@@ -654,5 +669,11 @@ mod eval {
 
 	#[test] fn _10__w_if_equal_10__sq__neg() { assert_eq!(Int(100), eval("10 :: w if == 10 _ sq _ neg")) }
 	#[test] fn _11__w_if_equal_10__sq__neg() { assert_eq!(Int(-11), eval("11 :: w if == 10 _ sq _ neg")) }
+
+	mod at {
+		use super::*;
+		#[test] fn arr_int() { assert_eq!(Int(8), eval("9,8,7,6,5 1 :: at")) }
+		#[test] fn arr_arr() { assert_eq!(Value::from([8,6]), eval("9,8,7,6,5 1,3 :: at")) }
+	}
 }
 
