@@ -609,10 +609,10 @@ mod eval {
 
 	mod if_ {
 		use super::*;
-		#[test] fn _100_is_even__add_10__sub_10() { assert_eq!(Int(100+10), eval("42 100 :: if is-even _ add 10 _ sub _ 10")) }
-		#[test] fn _101_is_even__add_10__sub_10() { assert_eq!(Int(100-10), eval("43 100 :: if is-even _ add 10 _ sub _ 10")) }
-		#[test] fn _100_w_is_even__add_10__sub_10() { assert_eq!(Int(100+10), eval("100 :: w if is-even _ add 10 _ sub _ 10")) }
-		#[test] fn _101_w_is_even__add_10__sub_10() { assert_eq!(Int(101-10), eval("101 :: w if is-even _ add 10 _ sub _ 10")) }
+		#[test] fn _100__is_even__add_10__sub_10() { assert_eq!(Int(100+10), eval("42 100 :: if is-even _ add 10 _ sub _ 10")) }
+		#[test] fn _101__is_even__add_10__sub_10() { assert_eq!(Int(100-10), eval("43 100 :: if is-even _ add 10 _ sub _ 10")) }
+		#[test] fn _100__w_is_even__add_10__sub_10() { assert_eq!(Int(100+10), eval("100 :: w if is-even _ add 10 _ sub _ 10")) }
+		#[test] fn _101__w_is_even__add_10__sub_10() { assert_eq!(Int(101-10), eval("101 :: w if is-even _ add 10 _ sub _ 10")) }
 	}
 
 	mod is_equal {
@@ -651,5 +651,8 @@ mod eval {
 		#[test] fn _10_99() { assert_eq!(Int(1), eval("10 99 :: !=")) }
 		#[test] fn _99_10() { assert_eq!(Int(1), eval("99 10 :: !=")) }
 	}
+
+	#[test] fn _10__w_if_equal_10__sq__neg() { assert_eq!(Int(100), eval("10 :: w if == 10 _ sq _ neg")) }
+	#[test] fn _11__w_if_equal_10__sq__neg() { assert_eq!(Int(-11), eval("11 :: w if == 10 _ sq _ neg")) }
 }
 
