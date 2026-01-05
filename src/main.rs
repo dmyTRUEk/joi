@@ -418,7 +418,7 @@ fn eval(program: &str) -> Value {
 
 fn eval_(program: &str, debug_fn_parsing: bool) -> Value {
 	let tmp = program.split("::").collect::<Vec<_>>();
-	let [args, fn_tokens] = tmp.as_slice() else { panic!() };
+	let [args, fn_tokens] = tmp.as_slice() else { panic!("expected exactly one `::`") };
 	let args: Vec<Value> = args
 		.split(' ')
 		.filter(|el| !el.is_empty())
