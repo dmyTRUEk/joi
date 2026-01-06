@@ -358,7 +358,7 @@ impl Function {
 				a.eval_(args).deep_apply(|b| Int(match b {
 					0 => 1,
 					1 => 0,
-					n => panic!("cant apply boolean not on int: {n}. (expected \"boolean\" aka 0 or 1)")
+					n => panic!("not: cant apply on int: {n}. (expected \"boolean\" aka 0 or 1)")
 				}))
 			}
 			Range(a) => {
@@ -370,7 +370,7 @@ impl Function {
 						arr.sort();
 						Array(arr)
 					}
-					Int(_) => panic!("cant call sort on int")
+					Int(_) => panic!("sort: cant call on int")
 				}
 			}
 			Square(a) => {
@@ -389,11 +389,11 @@ impl Function {
 							.fold(0, |acc, el| {
 								match el {
 									Int(el) => acc + el,
-									_ => panic!()
+									_ => panic!("sum: cant add not int")
 								}
 							})
 					),
-					_ => panic!()
+					_ => panic!("sum: cant sum not array")
 				}
 			}
 
@@ -408,14 +408,14 @@ impl Function {
 			At(ab) => {
 				let [a, b] = *ab.clone();
 				match (a.eval_(args), b.eval_(args)) {
-					(Int(_a), Int(_b)) => panic!("cant index into int"),
+					(Int(_a), Int(_b)) => panic!("at: cant index into int"),
 					(Array(arr), Int(i)) => arr[usize::try_from(i).unwrap()].clone(),
 					// (Int(i), Array(arr)) => arr[usize::try_from(i).unwrap()].clone(), // TODO: enable?
 					(Array(arr), Array(i)) => Array(i.iter().map(|i| match i {
 						Int(i) => arr[usize::try_from(*i).unwrap()].clone(),
-						_ => panic!()
+						_ => panic!("at: cant index array by array in array")
 					}).collect()),
-					_ => panic!()
+					_ => panic!("at: wrong args order")
 				}
 			}
 			IsEqual(ab) => {
@@ -469,12 +469,12 @@ impl Function {
 								.filter(|el| match f.eval(vec![el.clone()]) {
 									Int(0) => false,
 									Int(1) => true,
-									n => panic!("cant filter by int: {n}. (expected \"boolean\" aka 0 or 1)")
+									n => panic!("filter: cant filter by int: {n}. (expected \"boolean\" aka 0 or 1)")
 								})
 								.collect()
 						)
 					}
-					Int(_) => panic!("cant use filter on int")
+					Int(_) => panic!("filter: cant use on int")
 				}
 			}
 			Map(fx) => {
@@ -487,7 +487,7 @@ impl Function {
 								.collect()
 						)
 					}
-					Int(_) => panic!("cant use map on int")
+					Int(_) => panic!("map: cant use on int")
 				}
 			}
 			Reduce(fx) => {
@@ -498,7 +498,7 @@ impl Function {
 							.reduce(|acc, el| f.eval(vec![acc, el]))
 							.unwrap()
 					}
-					Int(_) => panic!("cant use reduce on int")
+					Int(_) => panic!("reduce: cant use on int")
 				}
 			}
 			Subtract(ab) => {
@@ -516,7 +516,7 @@ impl Function {
 							.map(|(a, b)| Array(vec![a, b]))
 							.collect()
 					),
-					_ => panic!()
+					_ => panic!("zip: expected two arrays")
 				}
 			}
 
@@ -531,7 +531,7 @@ impl Function {
 					Int(0) => {
 						c.eval_(args)
 					}
-					_ => panic!("condition is not \"boolean\" aka 0 or 1")
+					_ => panic!("if: condition is not \"boolean\" aka 0 or 1")
 				}
 			}
 		};
