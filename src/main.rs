@@ -274,12 +274,12 @@ impl Function {
 		}
 	}
 
-	fn call(&self, mut args: Vec<Value>) -> Value {
-		let result = self.call_(&mut args);
+	fn eval(&self, mut args: Vec<Value>) -> Value {
+		let result = self.eval_(&mut args);
 		assert!(args.is_empty(), "NOT ALL ARGS ARE USED!");
 		result
 	}
-	fn call_(&self, args: &mut Vec<Value>) -> Value {
+	fn eval_(&self, args: &mut Vec<Value>) -> Value {
 		use Function::*;
 		use Value::*;
 		match self {
@@ -290,50 +290,50 @@ impl Function {
 			Warbler(fx) => {
 				let [f, x] = *fx.clone();
 				// assert_eq!(2, a.arity(), "warbler expected function with arity=2 but it is {}", a.arity());
-				let x = x.call_(args);
-				f.call(vec![x.clone(), x])
+				let x = x.eval_(args);
+				f.eval(vec![x.clone(), x])
 			}
 			Cardinal(fxy) => {
 				let [f, x, y] = *fxy.clone();
 				// assert_eq!(2, a.arity(), "cardinal expected function with arity=2 but it is {}", a.arity());
-				let x = x.call_(args);
-				let y = y.call_(args);
-				f.call(vec![y, x])
+				let x = x.eval_(args);
+				let y = y.eval_(args);
+				f.eval(vec![y, x])
 			}
 			Starling(fgx) => {
 				let [f, g, x] = *fgx.clone();
 				// assert_eq!(2, a.arity(), "starling expected first function with arity=2 but it is {}", a.arity());
 				// assert_eq!(1, b.arity(), "starling expected second function with arity=1 but it is {}", b.arity());
-				let x = x.call_(args);
-				let gx = g.call(vec![x.clone()]);
-				f.call(vec![x, gx])
+				let x = x.eval_(args);
+				let gx = g.eval(vec![x.clone()]);
+				f.eval(vec![x, gx])
 			}
 
 			// FUNCTIONS ARITY 1
 			Identity(a) => {
-				a.call_(args)
+				a.eval_(args)
 			}
 			IsEven(a) => {
-				a.call_(args).deep_apply(|n| Int((n % 2 == 0) as i64))
+				a.eval_(args).deep_apply(|n| Int((n % 2 == 0) as i64))
 			}
 			IsPositive(a) => {
-				a.call_(args).deep_apply(|n| Int((n > 0) as i64))
+				a.eval_(args).deep_apply(|n| Int((n > 0) as i64))
 			}
 			Negate(a) => {
-				a.call_(args).deep_apply(|n| Int(-n))
+				a.eval_(args).deep_apply(|n| Int(-n))
 			}
 			Not(a) => {
-				a.call_(args).deep_apply(|b| Int(match b {
+				a.eval_(args).deep_apply(|b| Int(match b {
 					0 => 1,
 					1 => 0,
 					n => panic!("cant apply boolean not on int: {n}. (expected \"boolean\" aka 0 or 1)")
 				}))
 			}
 			Range(a) => {
-				a.call_(args).deep_apply(|n| Array( (1..=n).map(Int).collect() ))
+				a.eval_(args).deep_apply(|n| Array( (1..=n).map(Int).collect() ))
 			}
 			Sort(a) => {
-				match a.call_(args) {
+				match a.eval_(args) {
 					Array(mut arr) => {
 						arr.sort();
 						Array(arr)
@@ -342,26 +342,26 @@ impl Function {
 				}
 			}
 			Square(a) => {
-				match a.call_(args) {
+				match a.eval_(args) {
 					Int(n) => Int(n*n),
 					arr @ Array(_) => arr.deep_apply(|n| Int(n*n))
 				}
 			}
 			SquareRoot(a) => {
-				a.call_(args).deep_apply(|n| Int(n.isqrt()))
+				a.eval_(args).deep_apply(|n| Int(n.isqrt()))
 			}
 
 			// FUNCTIONS ARITY 2
 			Add(ab) => {
 				let [a, b] = *ab.clone();
-				match (a.call_(args), b.call_(args)) {
+				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a + b),
 					_ => todo!()
 				}
 			}
 			At(ab) => {
 				let [a, b] = *ab.clone();
-				match (a.call_(args), b.call_(args)) {
+				match (a.eval_(args), b.eval_(args)) {
 					(Int(_a), Int(_b)) => panic!("cant index into int"),
 					(Array(arr), Int(i)) => arr[usize::try_from(i).unwrap()].clone(),
 					// (Int(i), Array(arr)) => arr[usize::try_from(i).unwrap()].clone(), // TODO: enable?
@@ -374,53 +374,53 @@ impl Function {
 			}
 			IsEqual(ab) => {
 				let [a, b] = *ab.clone();
-				match (a.call_(args), b.call_(args)) {
+				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int((a == b) as i64),
 					_ => unimplemented!()
 				}
 			}
 			IsGreater(ab) => {
 				let [a, b] = *ab.clone();
-				match (a.call_(args), b.call_(args)) {
+				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int((a > b) as i64),
 					_ => unimplemented!()
 				}
 			}
 			IsGreaterEqual(ab) => {
 				let [a, b] = *ab.clone();
-				match (a.call_(args), b.call_(args)) {
+				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int((a >= b) as i64),
 					_ => unimplemented!()
 				}
 			}
 			IsLess(ab) => {
 				let [a, b] = *ab.clone();
-				match (a.call_(args), b.call_(args)) {
+				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int((a < b) as i64),
 					_ => unimplemented!()
 				}
 			}
 			IsLessEqual(ab) => {
 				let [a, b] = *ab.clone();
-				match (a.call_(args), b.call_(args)) {
+				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int((a <= b) as i64),
 					_ => unimplemented!()
 				}
 			}
 			IsNotEqual(ab) => {
 				let [a, b] = *ab.clone();
-				match (a.call_(args), b.call_(args)) {
+				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int((a != b) as i64),
 					_ => unimplemented!()
 				}
 			}
 			Filter(fx) => {
 				let [f, x] = *fx.clone();
-				match x.call_(args) {
+				match x.eval_(args) {
 					Array(arr) => {
 						Array(
 							arr.into_iter()
-								.filter(|el| match f.call(vec![el.clone()]) {
+								.filter(|el| match f.eval(vec![el.clone()]) {
 									Int(0) => false,
 									Int(1) => true,
 									n => panic!("cant filter by int: {n}. (expected \"boolean\" aka 0 or 1)")
@@ -433,11 +433,11 @@ impl Function {
 			}
 			Map(fx) => {
 				let [f, x] = *fx.clone();
-				match x.call_(args) {
+				match x.eval_(args) {
 					Array(arr) => {
 						Array(
 							arr.into_iter()
-								.map(|el| f.call(vec![el]))
+								.map(|el| f.eval(vec![el]))
 								.collect()
 						)
 					}
@@ -446,10 +446,10 @@ impl Function {
 			}
 			Reduce(fx) => {
 				let [f, x] = *fx.clone();
-				match x.call_(args) {
+				match x.eval_(args) {
 					Array(arr) => {
 						arr.into_iter()
-							.reduce(|acc, el| f.call(vec![acc, el]))
+							.reduce(|acc, el| f.eval(vec![acc, el]))
 							.unwrap()
 					}
 					Int(_) => panic!("cant use reduce on int")
@@ -457,7 +457,7 @@ impl Function {
 			}
 			Subtract(ab) => {
 				let [a, b] = *ab.clone();
-				match (a.call_(args), b.call_(args)) {
+				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a - b),
 					_ => todo!()
 				}
@@ -466,13 +466,13 @@ impl Function {
 			// FUNCTIONS ARITY 3
 			If(abc) => {
 				let [a, b, c] = *abc.clone();
-				let cond = a.call_(args);
+				let cond = a.eval_(args);
 				match cond {
 					Int(1) => {
-						b.call_(args)
+						b.eval_(args)
 					}
 					Int(0) => {
-						c.call_(args)
+						c.eval_(args)
 					}
 					_ => panic!("condition is not \"boolean\" aka 0 or 1")
 				}
@@ -502,7 +502,7 @@ fn eval_(program: &str, debug_fn_parsing: bool) -> Value {
 	// dbg!(fn_tokens);
 	let function = Function::from_str(fn_tokens);
 	if debug_fn_parsing { dbg!(&function); }
-	function.call(args)
+	function.eval(args)
 }
 
 
