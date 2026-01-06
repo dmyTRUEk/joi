@@ -212,6 +212,7 @@ enum Function {
 	Starling(Box<[Function; 3]>),
 
 	Absolute(Box<Function>),
+	CoDedup(Box<Function>),
 	Dedup(Box<Function>),
 	Identity(Box<Function>),
 	IsEven(Box<Function>),
@@ -227,6 +228,7 @@ enum Function {
 
 	Add(Box<[Function; 2]>),
 	At(Box<[Function; 2]>),
+	CoDedupBy(Box<[Function; 2]>),
 	DedupBy(Box<[Function; 2]>),
 	Filter(Box<[Function; 2]>), // TODO: make two: filter-leave and filter-remove or something like that
 	IsEqual(Box<[Function; 2]>),
@@ -291,6 +293,7 @@ impl Function {
 			"s" => Starling(abc!()),
 
 			"abs" => Absolute(a!()),
+			"codedup" => CoDedup(a!()),
 			"dedup" => Dedup(a!()),
 			"id" => Identity(a!()),
 			"is-even" => IsEven(a!()),
@@ -306,6 +309,7 @@ impl Function {
 
 			"add" => Add(ab!()),
 			"at" => At(ab!()),
+			"codedup-by" => CoDedupBy(ab!()),
 			"dedup-by" => DedupBy(ab!()),
 			"!=" => IsNotEqual(ab!()),
 			"<" => IsLess(ab!()),
@@ -364,6 +368,14 @@ impl Function {
 			// FUNCTIONS ARITY 1
 			Absolute(a) => {
 				a.eval_(args).deep_apply(|n| Int(n.abs()))
+			}
+			CoDedup(a) => {
+				match a.eval_(args) {
+					Array(arr) => {
+						Array(arr.codedup())
+					}
+					_ => panic!("dedup: expected array")
+				}
 			}
 			Dedup(a) => {
 				match a.eval_(args) {
@@ -460,6 +472,19 @@ impl Function {
 						_ => panic!("at: cant index array by array in array")
 					}).collect()),
 					_ => panic!("at: wrong args order")
+				}
+			}
+			CoDedupBy(fx) => {
+				let [f, x] = *fx.clone();
+				match x.eval_(args) {
+					Array(arr) => {
+						Array(arr.codedup_by(|a, b| match f.eval(vec![a.clone(), b.clone()]) {
+							Int(0) => false,
+							Int(1) => true,
+							_ => panic!("dedup-by: expected \"boolean\" aka 0 or 1 as a result of a comparison")
+						}))
+					}
+					_ => panic!("dedup-by: expected array as second arg")
 				}
 			}
 			DedupBy(fx) => {
@@ -846,6 +871,16 @@ mod eval {
 		use super::*;
 		#[test] fn _1_2_3_3_3__eq() { assert_eq!(Value::from([1,2,3]), eval("1,2,3,3,3 :: dedup-by ==")) }
 		// #[test] fn _1_2_3_3_3__?() { assert_eq!(Value::from([3,3,3]), eval("1,2,3,3,3 :: dedup-by ?")) } // TODO?
+	}
+
+	mod codedup {
+		use super::*;
+		#[test] fn _1_2_3_3_3() { assert_eq!(Value::from([3,3,3]), eval("1,2,3,3,3 :: codedup")) }
+	}
+
+	mod codedup_by {
+		use super::*;
+		#[test] fn _1_2_3_m3_m3__abs() { assert_eq!(Value::from([3,-3,-3]), eval("1,2,3,-3,-3 :: codedup-by != abs _ abs _")) }
 	}
 }
 
