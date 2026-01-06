@@ -153,6 +153,12 @@ impl<const N: usize, const M: usize> From<[[i64; M]; N]> for Value {
 		Array(arr.map(Value::from).to_vec())
 	}
 }
+impl<const N: usize, const M: usize, const K: usize> From<[[[i64; K]; M]; N]> for Value {
+	fn from(arr: [[[i64; K]; M]; N]) -> Self {
+		use Value::*;
+		Array(arr.map(Value::from).to_vec())
+	}
+}
 impl From<Vec<i64>> for Value {
 	fn from(arr: Vec<i64>) -> Self {
 		use Value::*;
@@ -312,6 +318,7 @@ impl Function {
 		result
 	}
 	fn eval_(&self, args: &mut Vec<Value>) -> Value {
+		// TODO(bench): `&self` vs `self`.
 		use Function::*;
 		use Value::*;
 		let res = match self {
@@ -596,13 +603,13 @@ mod eval {
 		}
 		mod _2d {
 			use super::*;
-			#[test] fn _0_0() { assert_eq!(Value::from([vec![], vec![]]), eval("__ ::")) }
-			#[test] fn _1_1() { assert_eq!(Value::from([vec![3], vec![4]]), eval("3,__4, ::")) }
-			#[test] fn _2_2() { assert_eq!(Value::from([vec![3,4], vec![5,6]]), eval("3,4__5,6 ::")) }
+			#[test] fn _0_0() { assert_eq!(Value::from([vec![],vec![]]), eval("__ ::")) }
+			#[test] fn _1_1() { assert_eq!(Value::from([[3],[4]]), eval("3,__4, ::")) }
+			#[test] fn _2_2() { assert_eq!(Value::from([[3,4],[5,6]]), eval("3,4__5,6 ::")) }
 		}
 		mod _3d {
 			use super::*;
-			#[test] fn _2_2__2_2() { assert_eq!(Array(vec![Value::from([vec![3,4], vec![5,6]]), Value::from([vec![7,8], vec![9,0]])]), eval("3,4__5,6____7,8__9,0 ::")) }
+			#[test] fn _2_2__2_2() { assert_eq!(Value::from([[[3,4],[5,6]],[[7,8],[9,0]]]), eval("3,4__5,6____7,8__9,0 ::")) }
 		}
 	}
 
@@ -761,7 +768,7 @@ mod eval {
 
 	mod zip {
 		use super::*;
-		#[test] fn _1_2_3__4_5_6() { assert_eq!(Value::from([[1,4], [2,5], [3,6]]), eval("1,2,3 4,5,6 :: zip")) }
+		#[test] fn _1_2_3__4_5_6() { assert_eq!(Value::from([[1,4],[2,5],[3,6]]), eval("1,2,3 4,5,6 :: zip")) }
 		#[test] fn _1_2_3__4_5_6__reduce_add() { assert_eq!(Value::from([5,7,9]), eval("1,2,3 4,5,6 :: map reduce add _ _ _ zip")) }
 		#[test] fn _1_2_3__4_5_6__sum() { assert_eq!(Value::from([5,7,9]), eval("1,2,3 4,5,6 :: map sum _ zip")) }
 	}
