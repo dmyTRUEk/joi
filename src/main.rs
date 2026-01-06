@@ -75,16 +75,17 @@ fn main() {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Value {
 	Int(i64),
+	// TODO: rename into List?
 	Array(Vec<Value>),
 }
 impl Value {
-	fn deep_apply(self, f: fn(i64) -> Value) -> Value {
+	fn deep_map(self, f: fn(i64) -> Value) -> Value {
 		use Value::*;
 		match self {
 			Int(n) => f(n),
 			Array(arr) => Array(
 				arr.into_iter()
-					.map(|el| el.deep_apply(f))
+					.map(|el| el.deep_map(f))
 					.collect()
 			)
 		}
@@ -213,35 +214,61 @@ enum Function {
 
 	Absolute(Box<Function>),
 	CoDedup(Box<Function>),
+	// CubeRoot(Box<Function>),
 	Dedup(Box<Function>),
+	// Decrease(Box<Function>),
+	// First(Box<Function>),
+	// Head(Box<Function>), // everything but last
 	Identity(Box<Function>),
+	// Increase(Box<Function>),
 	IsEven(Box<Function>),
+	// IsOdd(Box<Function>),
 	IsPositive(Box<Function>),
+	// IsNegative(Box<Function>),
+	// IsZero(Box<Function>),
+	// Last(Box<Function>),
 	Negate(Box<Function>),
 	Not(Box<Function>),
+	// Product(Box<Function>),
 	Range(Box<Function>),
 	Sort(Box<Function>),
 	Square(Box<Function>),
 	SquareRoot(Box<Function>),
 	Sum(Box<Function>),
+	// Tail(Box<Function>), // everything but first
 	Transpose(Box<Function>),
+
+	// Max/Min: 1 or 2 args?
 
 	Add(Box<[Function; 2]>),
 	At(Box<[Function; 2]>),
 	CoDedupBy(Box<[Function; 2]>),
 	DedupBy(Box<[Function; 2]>),
+	// Divide(Box<[Function; 2]>),
 	Filter(Box<[Function; 2]>), // TODO: make two: filter-leave and filter-remove or something like that
+	// Find(Box<[Function; 2]>),
+	// IndexOf/Position
+	// Insert(Box<[Function; 2]>),
 	IsEqual(Box<[Function; 2]>),
 	IsGreater(Box<[Function; 2]>),
 	IsGreaterEqual(Box<[Function; 2]>),
 	IsLess(Box<[Function; 2]>),
 	IsLessEqual(Box<[Function; 2]>),
 	IsNotEqual(Box<[Function; 2]>),
+	// Join(Box<[Function; 2]>),
 	Map(Box<[Function; 2]>),
+	// Modulo(Box<[Function; 2]>),
+	// ModuloFake(Box<[Function; 2]>),
+	// Multiply(Box<[Function; 2]>),
 	Reduce(Box<[Function; 2]>),
+	// Rotate(Box<[Function; 2]>),
 	Subtract(Box<[Function; 2]>),
 	Zip(Box<[Function; 2]>),
 
+	// Slice
+	// SplitAtIndex/Function
+
+	// Fold(Box<[Function; 3]>),
 	If(Box<[Function; 3]>),
 }
 impl Function {
@@ -254,29 +281,6 @@ impl Function {
 		assert!(tokens.is_empty(), "NOT ALL TOKENS ARE USED!");
 		f
 	}
-
-	// TODO?
-	// fn arity(&self) -> u8 {
-	// 	use Function::*;
-	// 	match self {
-	// 		| Argument
-	// 		| Literal(_)
-	// 		=> 0,
-	// 		| Cardinal(_) // ?
-	// 		=> 1,
-	// 		| Warbler(_) // ???
-	// 		| Starling(_) // ?
-	// 		=> 2,
-	// 		| Identity(_)
-	// 		| Negate(_)
-	// 		| Sort(_)
-	// 		| Square(_)
-	// 		=> 1,
-	// 		| Add(_)
-	// 		| Subtract(_)
-	// 		=> 2,
-	// 	}
-	// }
 
 	fn from_strs(tokens: &mut Vec<&str>) -> Self {
 		use Function::*;
@@ -367,7 +371,7 @@ impl Function {
 
 			// FUNCTIONS ARITY 1
 			Absolute(a) => {
-				a.eval_(args).deep_apply(|n| Int(n.abs()))
+				a.eval_(args).deep_map(|n| Int(n.abs()))
 			}
 			CoDedup(a) => {
 				match a.eval_(args) {
@@ -390,23 +394,23 @@ impl Function {
 				a.eval_(args)
 			}
 			IsEven(a) => {
-				a.eval_(args).deep_apply(|n| Int((n % 2 == 0) as i64))
+				a.eval_(args).deep_map(|n| Int((n % 2 == 0) as i64))
 			}
 			IsPositive(a) => {
-				a.eval_(args).deep_apply(|n| Int((n > 0) as i64))
+				a.eval_(args).deep_map(|n| Int((n > 0) as i64))
 			}
 			Negate(a) => {
-				a.eval_(args).deep_apply(|n| Int(-n))
+				a.eval_(args).deep_map(|n| Int(-n))
 			}
 			Not(a) => {
-				a.eval_(args).deep_apply(|b| Int(match b {
+				a.eval_(args).deep_map(|b| Int(match b {
 					0 => 1,
 					1 => 0,
 					n => panic!("not: cant apply on int: {n}. (expected \"boolean\" aka 0 or 1)")
 				}))
 			}
 			Range(a) => {
-				a.eval_(args).deep_apply(|n| Array( (1..=n).map(Int).collect() ))
+				a.eval_(args).deep_map(|n| Array( (1..=n).map(Int).collect() ))
 			}
 			Sort(a) => {
 				match a.eval_(args) {
@@ -420,11 +424,11 @@ impl Function {
 			Square(a) => {
 				match a.eval_(args) {
 					Int(n) => Int(n*n),
-					arr @ Array(_) => arr.deep_apply(|n| Int(n*n))
+					arr @ Array(_) => arr.deep_map(|n| Int(n*n))
 				}
 			}
 			SquareRoot(a) => {
-				a.eval_(args).deep_apply(|n| Int(n.isqrt()))
+				a.eval_(args).deep_map(|n| Int(n.isqrt()))
 			}
 			Sum(a) => {
 				match a.eval_(args) {
