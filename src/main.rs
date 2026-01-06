@@ -378,7 +378,7 @@ impl Function {
 					Array(arr) => {
 						Array(arr.codedup())
 					}
-					_ => panic!("dedup: expected array")
+					_ => panic!("codedup: expected array")
 				}
 			}
 			Dedup(a) => {
@@ -485,10 +485,10 @@ impl Function {
 						Array(arr.codedup_by(|a, b| match f.eval(vec![a.clone(), b.clone()]) {
 							Int(0) => false,
 							Int(1) => true,
-							_ => panic!("dedup-by: expected \"boolean\" aka 0 or 1 as a result of a comparison")
+							_ => panic!("codedup-by: expected \"boolean\" aka 0 or 1 as a result of a comparison")
 						}))
 					}
-					_ => panic!("dedup-by: expected array as second arg")
+					_ => panic!("codedup-by: expected array as second arg")
 				}
 			}
 			DedupBy(fx) => {
