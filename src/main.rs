@@ -217,7 +217,7 @@ enum Function {
 	// CubeRoot(Box<Function>),
 	Dedup(Box<Function>),
 	// Decrease(Box<Function>),
-	// First(Box<Function>),
+	First(Box<Function>),
 	// Head(Box<Function>), // everything but last
 	Identity(Box<Function>),
 	// Increase(Box<Function>),
@@ -226,7 +226,7 @@ enum Function {
 	IsPositive(Box<Function>),
 	// IsNegative(Box<Function>),
 	// IsZero(Box<Function>),
-	// Last(Box<Function>),
+	Last(Box<Function>),
 	Negate(Box<Function>),
 	Not(Box<Function>),
 	// Product(Box<Function>),
@@ -299,9 +299,11 @@ impl Function {
 			"abs" => Absolute(a!()),
 			"codedup" => CoDedup(a!()),
 			"dedup" => Dedup(a!()),
+			"first" => First(a!()),
 			"id" => Identity(a!()),
 			"is-even" => IsEven(a!()),
 			"is-pos" => IsPositive(a!()),
+			"last" => Last(a!()),
 			"neg" => Negate(a!()),
 			"not" => Not(a!()),
 			"range" => Range(a!()),
@@ -390,6 +392,12 @@ impl Function {
 					_ => panic!("dedup: expected array")
 				}
 			}
+			First(a) => {
+				match a.eval_(args) {
+					Array(mut arr) => arr.remove(0),
+					_ => panic!("first: expected array")
+				}
+			}
 			Identity(a) => {
 				a.eval_(args)
 			}
@@ -398,6 +406,12 @@ impl Function {
 			}
 			IsPositive(a) => {
 				a.eval_(args).deep_map(|n| Int((n > 0) as i64))
+			}
+			Last(a) => {
+				match a.eval_(args) {
+					Array(mut arr) => arr.remove(arr.len()-1),
+					_ => panic!("last: expected array")
+				}
 			}
 			Negate(a) => {
 				a.eval_(args).deep_map(|n| Int(-n))
@@ -885,6 +899,16 @@ mod eval {
 	mod codedup_by {
 		use super::*;
 		#[test] fn _1_2_3_m3_m3__abs() { assert_eq!(Value::from([3,-3,-3]), eval("1,2,3,-3,-3 :: codedup-by != abs _ abs _")) }
+	}
+
+	mod first {
+		use super::*;
+		#[test] fn _4_5_6() { assert_eq!(Int(4), eval("4,5,6 :: first")) }
+	}
+
+	mod last {
+		use super::*;
+		#[test] fn _4_5_6() { assert_eq!(Int(6), eval("4,5,6 :: last")) }
 	}
 }
 
