@@ -200,6 +200,7 @@ enum Function {
 	Sort(Box<Function>),
 	Square(Box<Function>),
 	SquareRoot(Box<Function>),
+	Sum(Box<Function>),
 
 	Add(Box<[Function; 2]>),
 	At(Box<[Function; 2]>),
@@ -274,6 +275,7 @@ impl Function {
 			"sort" => Sort(a!()),
 			"sq" => Square(a!()),
 			"sqrt" => SquareRoot(a!()),
+			"sum" => Sum(a!()),
 
 			"add" => Add(ab!()),
 			"at" => At(ab!()),
@@ -370,6 +372,20 @@ impl Function {
 			}
 			SquareRoot(a) => {
 				a.eval_(args).deep_apply(|n| Int(n.isqrt()))
+			}
+			Sum(a) => {
+				match a.eval_(args) {
+					Array(arr) => Int(
+						arr.into_iter()
+							.fold(0, |acc, el| {
+								match el {
+									Int(el) => acc + el,
+									_ => panic!()
+								}
+							})
+					),
+					_ => panic!()
+				}
 			}
 
 			// FUNCTIONS ARITY 2
@@ -722,10 +738,18 @@ mod eval {
 		#[test] fn _16() { assert_eq!(Int(4), eval("16 :: sqrt")) }
 	}
 
+	mod sum {
+		use super::*;
+		#[test] fn _1_2_3() { assert_eq!(Int(6), eval("1,2,3 :: sum")) }
+		#[test] fn _1_2_3_4() { assert_eq!(Int(10), eval("1,2,3,4 :: sum")) }
+		#[test] fn _1_2_3_4_5() { assert_eq!(Int(15), eval("1,2,3,4,5 :: sum")) }
+	}
+
 	mod zip {
 		use super::*;
 		#[test] fn _1_2_3__4_5_6() { assert_eq!(Value::from([[1,4], [2,5], [3,6]]), eval("1,2,3 4,5,6 :: zip")) }
 		#[test] fn _1_2_3__4_5_6__reduce_add() { assert_eq!(Value::from([5,7,9]), eval("1,2,3 4,5,6 :: map reduce add _ _ _ zip")) }
+		#[test] fn _1_2_3__4_5_6__sum() { assert_eq!(Value::from([5,7,9]), eval("1,2,3 4,5,6 :: map sum _ zip")) }
 	}
 }
 
