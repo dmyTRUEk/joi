@@ -226,6 +226,7 @@ enum Function {
 
 	Add(Box<[Function; 2]>),
 	At(Box<[Function; 2]>),
+	DedupBy(Box<[Function; 2]>),
 	Filter(Box<[Function; 2]>), // TODO: make two: filter-leave and filter-remove or something like that
 	IsEqual(Box<[Function; 2]>),
 	IsGreater(Box<[Function; 2]>),
@@ -303,6 +304,7 @@ impl Function {
 
 			"add" => Add(ab!()),
 			"at" => At(ab!()),
+			"dedup-by" => DedupBy(ab!()),
 			"!=" => IsNotEqual(ab!()),
 			"<" => IsLess(ab!()),
 			"<=" => IsLessEqual(ab!()),
@@ -453,6 +455,20 @@ impl Function {
 						_ => panic!("at: cant index array by array in array")
 					}).collect()),
 					_ => panic!("at: wrong args order")
+				}
+			}
+			DedupBy(fx) => {
+				let [f, x] = *fx.clone();
+				match x.eval_(args) {
+					Array(mut arr) => {
+						arr.dedup_by(|a, b| match f.eval(vec![a.clone(), b.clone()]) {
+							Int(0) => false,
+							Int(1) => true,
+							_ => panic!("dedup-by: expected \"boolean\" aka 0 or 1 as a result of a comparison")
+						});
+						Array(arr)
+					}
+					_ => panic!("dedup-by: expected array as second arg")
 				}
 			}
 			IsEqual(ab) => {
@@ -812,6 +828,12 @@ mod eval {
 	mod dedup {
 		use super::*;
 		#[test] fn _1_2_3_3_3() { assert_eq!(Value::from([1,2,3]), eval("1,2,3,3,3 :: dedup")) }
+	}
+
+	mod dedup_by {
+		use super::*;
+		#[test] fn _1_2_3_3_3__eq() { assert_eq!(Value::from([1,2,3]), eval("1,2,3,3,3 :: dedup-by ==")) }
+		// #[test] fn _1_2_3_3_3__?() { assert_eq!(Value::from([3,3,3]), eval("1,2,3,3,3 :: dedup-by ?")) } // TODO?
 	}
 }
 
