@@ -180,6 +180,7 @@ enum Function {
 	Range(Box<Function>),
 	Sort(Box<Function>),
 	Square(Box<Function>),
+	SquareRoot(Box<Function>),
 
 	Add(Box<[Function; 2]>),
 	At(Box<[Function; 2]>),
@@ -252,6 +253,7 @@ impl Function {
 			"range" => Range(a!()),
 			"sort" => Sort(a!()),
 			"sq" => Square(a!()),
+			"sqrt" => SquareRoot(a!()),
 
 			"add" => Add(ab!()),
 			"at" => At(ab!()),
@@ -344,6 +346,9 @@ impl Function {
 					Int(n) => Int(n*n),
 					arr @ Array(_) => arr.deep_apply(|n| Int(n*n))
 				}
+			}
+			SquareRoot(a) => {
+				a.call_(args).deep_apply(|n| Int(n.isqrt()))
 			}
 
 			// FUNCTIONS ARITY 2
@@ -674,6 +679,15 @@ mod eval {
 		use super::*;
 		#[test] fn arr_int() { assert_eq!(Int(8), eval("9,8,7,6,5 1 :: at")) }
 		#[test] fn arr_arr() { assert_eq!(Value::from([8,6]), eval("9,8,7,6,5 1,3 :: at")) }
+	}
+
+	mod sqrt {
+		use super::*;
+		#[test] fn _0() { assert_eq!(Int(0), eval("0 :: sqrt")) }
+		#[test] fn _1() { assert_eq!(Int(1), eval("1 :: sqrt")) }
+		#[test] fn _4() { assert_eq!(Int(2), eval("4 :: sqrt")) }
+		#[test] fn _9() { assert_eq!(Int(3), eval("9 :: sqrt")) }
+		#[test] fn _16() { assert_eq!(Int(4), eval("16 :: sqrt")) }
 	}
 }
 
