@@ -125,6 +125,25 @@ impl<const N: usize> From<[i64; N]> for Value {
 		Array(arr.map(Int).to_vec())
 	}
 }
+// impl From<&[i64]> for Value {
+// 	fn from(arr: &[i64]) -> Self {
+// 		use Value::*;
+// 		Array(arr.iter().map(|n| Int(*n)).collect())
+// 	}
+// }
+// impl<const N: usize> From<[&[i64]; N]> for Value {
+// 	fn from(arr: [&[i64]; N]) -> Self {
+// 		use Value::*;
+// 		// Array(arr.map(Value::from).to_vec())
+// 		Array(arr.map(|s| Value::from(s.to_vec())).to_vec()) // better?
+// 	}
+// }
+impl<const N: usize, const M: usize> From<[[i64; M]; N]> for Value {
+	fn from(arr: [[i64; M]; N]) -> Self {
+		use Value::*;
+		Array(arr.map(Value::from).to_vec())
+	}
+}
 impl From<Vec<i64>> for Value {
 	fn from(arr: Vec<i64>) -> Self {
 		use Value::*;
@@ -194,6 +213,7 @@ enum Function {
 	Map(Box<[Function; 2]>),
 	Reduce(Box<[Function; 2]>),
 	Subtract(Box<[Function; 2]>),
+	Zip(Box<[Function; 2]>),
 
 	If(Box<[Function; 3]>),
 }
@@ -267,6 +287,7 @@ impl Function {
 			"map" => Map(ab!()),
 			"reduce" => Reduce(ab!()),
 			"sub" => Subtract(ab!()),
+			"zip" => Zip(ab!()),
 
 			"if" => If(abc!()),
 
@@ -460,6 +481,17 @@ impl Function {
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a - b),
 					_ => todo!()
+				}
+			}
+			Zip(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Array(a), Array(b)) => Array(
+						a.into_iter().zip(b)
+							.map(|(a, b)| Array(vec![a, b]))
+							.collect()
+					),
+					_ => panic!()
 				}
 			}
 
@@ -688,6 +720,12 @@ mod eval {
 		#[test] fn _4() { assert_eq!(Int(2), eval("4 :: sqrt")) }
 		#[test] fn _9() { assert_eq!(Int(3), eval("9 :: sqrt")) }
 		#[test] fn _16() { assert_eq!(Int(4), eval("16 :: sqrt")) }
+	}
+
+	mod zip {
+		use super::*;
+		#[test] fn _1_2_3__4_5_6() { assert_eq!(Value::from([[1,4], [2,5], [3,6]]), eval("1,2,3 4,5,6 :: zip")) }
+		#[test] fn _1_2_3__4_5_6__reduce_add() { assert_eq!(Value::from([5,7,9]), eval("1,2,3 4,5,6 :: map reduce add _ _ _ zip")) }
 	}
 }
 
