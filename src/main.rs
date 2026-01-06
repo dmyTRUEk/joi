@@ -10,6 +10,11 @@ use std::fmt::Display;
 
 use clap::Parser;
 
+mod lib_;
+use crate::lib_::*;
+
+
+
 
 
 #[derive(Parser, Debug)]
@@ -216,6 +221,7 @@ enum Function {
 	Square(Box<Function>),
 	SquareRoot(Box<Function>),
 	Sum(Box<Function>),
+	Transpose(Box<Function>),
 
 	Add(Box<[Function; 2]>),
 	At(Box<[Function; 2]>),
@@ -291,6 +297,7 @@ impl Function {
 			"sq" => Square(a!()),
 			"sqrt" => SquareRoot(a!()),
 			"sum" => Sum(a!()),
+			"transpose" => Transpose(a!()),
 
 			"add" => Add(ab!()),
 			"at" => At(ab!()),
@@ -401,6 +408,18 @@ impl Function {
 							})
 					),
 					_ => panic!("sum: cant sum not array")
+				}
+			}
+			Transpose(a) => {
+				match a.eval_(args) {
+					Array(arr) => Array(
+						transpose(arr.into_iter().map(|arr| match arr {
+							Array(arr) => arr,
+							_ => panic!("transpose: expected array of arrays")
+						}).collect())
+						.into_iter().map(Array).collect()
+					),
+					_ => panic!("transpose: cant call on not array")
 				}
 			}
 
@@ -771,6 +790,12 @@ mod eval {
 		#[test] fn _1_2_3__4_5_6() { assert_eq!(Value::from([[1,4],[2,5],[3,6]]), eval("1,2,3 4,5,6 :: zip")) }
 		#[test] fn _1_2_3__4_5_6__reduce_add() { assert_eq!(Value::from([5,7,9]), eval("1,2,3 4,5,6 :: map reduce add _ _ _ zip")) }
 		#[test] fn _1_2_3__4_5_6__sum() { assert_eq!(Value::from([5,7,9]), eval("1,2,3 4,5,6 :: map sum _ zip")) }
+	}
+
+	mod transpose {
+		use super::*;
+		#[test] fn _1_2_3__4_5_6() { assert_eq!(Value::from([[1,4],[2,5],[3,6]]), eval("1,2,3__4,5,6 :: transpose")) }
+		#[test] fn _1_2__3_4__5_6() { assert_eq!(Value::from([[1,2,3],[4,5,6]]), eval("1,4__2,5__3,6 :: transpose")) }
 	}
 }
 
