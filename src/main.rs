@@ -30,6 +30,12 @@ use clap::Parser;
 	",
 )]
 struct CliArgs {
+	// #[arg(short='D', long, default_value_t=false)]
+	// debug_parsing: bool,
+	//
+	// #[arg(short='d', long, default_value_t=false)]
+	// debug_eval: bool,
+
 	#[arg(short='d', long, default_value_t=false)]
 	debug: bool,
 
@@ -46,11 +52,14 @@ struct CliArgs {
 
 fn main() {
 	let CliArgs {
+		// debug_parsing,
+		// debug_eval,
 		debug,
 		program,
 	} = CliArgs::parse();
 
-	let result = eval_(&program.join(" "), debug);
+	// let result = eval_(&program.join(" "), debug_parsing, debug_eval);
+	let result = eval_(&program.join(" "), debug, debug);
 	println!("result: {result}");
 }
 
@@ -305,7 +314,7 @@ impl Function {
 	fn eval_(&self, args: &mut Vec<Value>) -> Value {
 		use Function::*;
 		use Value::*;
-		match self {
+		let res = match self {
 			// 0
 			Argument => args.remove(0),
 			Literal(v) => v.clone(),
@@ -525,7 +534,11 @@ impl Function {
 					_ => panic!("condition is not \"boolean\" aka 0 or 1")
 				}
 			}
+		};
+		if true {
+			eprintln!("{self:?}: {res}");
 		}
+		res
 	}
 }
 
@@ -535,10 +548,10 @@ impl Function {
 
 #[allow(dead_code)] // its used for testing
 fn eval(program: &str) -> Value {
-	eval_(program, true)
+	eval_(program, true, true)
 }
 
-fn eval_(program: &str, debug_fn_parsing: bool) -> Value {
+fn eval_(program: &str, debug_parsing: bool, _debug_eval: bool) -> Value {
 	let tmp = program.split("::").collect::<Vec<_>>();
 	let [args, fn_tokens] = tmp.as_slice() else { panic!("expected exactly one `::`") };
 	let args: Vec<Value> = args
@@ -549,7 +562,8 @@ fn eval_(program: &str, debug_fn_parsing: bool) -> Value {
 	// dbg!(&args);
 	// dbg!(fn_tokens);
 	let function = Function::from_str(fn_tokens);
-	if debug_fn_parsing { dbg!(&function); }
+	if debug_parsing { dbg!(&function); }
+	// dbg!(debug_eval); // TODO: FIXME
 	function.eval(args)
 }
 
