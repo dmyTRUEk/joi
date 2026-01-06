@@ -211,6 +211,7 @@ enum Function {
 	Cardinal(Box<[Function; 3]>),
 	Starling(Box<[Function; 3]>),
 
+	Dedup(Box<Function>),
 	Identity(Box<Function>),
 	IsEven(Box<Function>),
 	IsPositive(Box<Function>),
@@ -287,6 +288,7 @@ impl Function {
 			"c" => Cardinal(abc!()),
 			"s" => Starling(abc!()),
 
+			"dedup" => Dedup(a!()),
 			"id" => Identity(a!()),
 			"is-even" => IsEven(a!()),
 			"is-pos" => IsPositive(a!()),
@@ -356,6 +358,15 @@ impl Function {
 			}
 
 			// FUNCTIONS ARITY 1
+			Dedup(a) => {
+				match a.eval_(args) {
+					Array(mut arr) => {
+						arr.dedup();
+						Array(arr)
+					}
+					_ => panic!("dedup: expected array")
+				}
+			}
 			Identity(a) => {
 				a.eval_(args)
 			}
@@ -796,6 +807,11 @@ mod eval {
 		use super::*;
 		#[test] fn _1_2_3__4_5_6() { assert_eq!(Value::from([[1,4],[2,5],[3,6]]), eval("1,2,3__4,5,6 :: transpose")) }
 		#[test] fn _1_2__3_4__5_6() { assert_eq!(Value::from([[1,2,3],[4,5,6]]), eval("1,4__2,5__3,6 :: transpose")) }
+	}
+
+	mod dedup {
+		use super::*;
+		#[test] fn _1_2_3_3_3() { assert_eq!(Value::from([1,2,3]), eval("1,2,3,3,3 :: dedup")) }
 	}
 }
 
