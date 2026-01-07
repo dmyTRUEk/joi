@@ -242,6 +242,7 @@ enum Function {
 
 	Add(Box<[Function; 2]>),
 	At(Box<[Function; 2]>),
+	Chunks(Box<[Function; 2]>),
 	CoDedupBy(Box<[Function; 2]>),
 	DedupBy(Box<[Function; 2]>),
 	// Divide(Box<[Function; 2]>),
@@ -263,6 +264,7 @@ enum Function {
 	Reduce(Box<[Function; 2]>),
 	// Rotate(Box<[Function; 2]>),
 	Subtract(Box<[Function; 2]>),
+	Windows(Box<[Function; 2]>),
 	Zip(Box<[Function; 2]>),
 
 	// Slice
@@ -315,6 +317,7 @@ impl Function {
 
 			"add" => Add(ab!()),
 			"at" => At(ab!()),
+			"chunks" => Chunks(ab!()),
 			"codedup-by" => CoDedupBy(ab!()),
 			"dedup-by" => DedupBy(ab!()),
 			"!=" => IsNotEqual(ab!()),
@@ -327,6 +330,7 @@ impl Function {
 			"map" => Map(ab!()),
 			"reduce" => Reduce(ab!()),
 			"sub" => Subtract(ab!()),
+			"windows" => Windows(ab!()),
 			"zip" => Zip(ab!()),
 
 			"if" => If(abc!()),
@@ -492,6 +496,18 @@ impl Function {
 					_ => panic!("at: wrong args order")
 				}
 			}
+			Chunks(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Int(n), Array(arr)) => Array(
+						arr
+							.chunks(n as usize)
+							.map(|c| Array(c.to_vec()))
+							.collect()
+					),
+					_ => panic!("chunks: expected int and array")
+				}
+			}
 			CoDedupBy(fx) => {
 				let [f, x] = *fx.clone();
 				match x.eval_(args) {
@@ -607,6 +623,18 @@ impl Function {
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a - b),
 					_ => todo!()
+				}
+			}
+			Windows(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Int(n), Array(arr)) => Array(
+						arr
+							.windows(n as usize)
+							.map(|c| Array(c.to_vec()))
+							.collect()
+					),
+					_ => panic!("windows: expected int and array")
 				}
 			}
 			Zip(ab) => {
@@ -909,6 +937,18 @@ mod eval {
 	mod last {
 		use super::*;
 		#[test] fn _4_5_6() { assert_eq!(Int(6), eval("4,5,6 :: last")) }
+	}
+
+	mod chunks {
+		use super::*;
+		#[test] fn _1_2_3_4_5_6__2() { assert_eq!(Value::from([[1,2],[3,4],[5,6]]), eval("1,2,3,4,5,6 :: chunks 2")) }
+		#[test] fn _1_2_3_4_5_6__3() { assert_eq!(Value::from([[1,2,3],[4,5,6]]), eval("1,2,3,4,5,6 :: chunks 3")) }
+	}
+
+	mod windows {
+		use super::*;
+		#[test] fn _1_2_3_4_5_6__2() { assert_eq!(Value::from([[1,2],[2,3],[3,4],[4,5],[5,6]]), eval("1,2,3,4,5,6 :: windows 2")) }
+		#[test] fn _1_2_3_4_5_6__3() { assert_eq!(Value::from([[1,2,3],[2,3,4],[3,4,5],[4,5,6]]), eval("1,2,3,4,5,6 :: windows 3")) }
 	}
 }
 
