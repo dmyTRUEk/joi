@@ -258,8 +258,8 @@ enum Function {
 	IsNotEqual(Box<[Function; 2]>),
 	// Join(Box<[Function; 2]>),
 	Map(Box<[Function; 2]>),
-	// Modulo(Box<[Function; 2]>),
-	// ModuloFake(Box<[Function; 2]>),
+	Modulo(Box<[Function; 2]>),
+	ModuloFake(Box<[Function; 2]>),
 	// Multiply(Box<[Function; 2]>),
 	Reduce(Box<[Function; 2]>),
 	// Rotate(Box<[Function; 2]>),
@@ -328,6 +328,8 @@ impl Function {
 			">=" => IsGreaterEqual(ab!()),
 			"filter" => Filter(ab!()),
 			"map" => Map(ab!()),
+			"mod" => Modulo(ab!()),
+			"modf" => ModuloFake(ab!()),
 			"reduce" => Reduce(ab!()),
 			"sub" => Subtract(ab!()),
 			"windows" => Windows(ab!()),
@@ -605,6 +607,20 @@ impl Function {
 						)
 					}
 					Int(_) => panic!("map: cant use on int")
+				}
+			}
+			Modulo(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Int(a), Int(b)) => Int(a.rem_euclid(b)),
+					_ => panic!("mod: expected int and int")
+				}
+			}
+			ModuloFake(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Int(a), Int(b)) => Int(a % b),
+					_ => panic!("modf: expected int and int")
 				}
 			}
 			Reduce(fx) => {
@@ -949,6 +965,17 @@ mod eval {
 		use super::*;
 		#[test] fn _1_2_3_4_5_6__2() { assert_eq!(Value::from([[1,2],[2,3],[3,4],[4,5],[5,6]]), eval("1,2,3,4,5,6 :: windows 2")) }
 		#[test] fn _1_2_3_4_5_6__3() { assert_eq!(Value::from([[1,2,3],[2,3,4],[3,4,5],[4,5,6]]), eval("1,2,3,4,5,6 :: windows 3")) }
+	}
+
+	mod modulo {
+		use super::*;
+		#[test] fn _42_10() { assert_eq!(Int(2), eval("42 10 :: mod")) }
+		#[test] fn _m42_10() { assert_eq!(Int(8), eval("-42 10 :: mod")) }
+	}
+	mod modulo_fake {
+		use super::*;
+		#[test] fn _42_10() { assert_eq!(Int(2), eval("42 10 :: modf")) }
+		#[test] fn _m42_10() { assert_eq!(Int(-2), eval("-42 10 :: modf")) }
 	}
 }
 
