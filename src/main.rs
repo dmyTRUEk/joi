@@ -636,7 +636,7 @@ impl Function {
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(n), Array(arr)) => Array(
 						arr
-							.chunks(n as usize)
+							.chunks(n.try_into().unwrap())
 							.map(|c| Array(c.to_vec()))
 							.collect()
 					),
@@ -894,7 +894,7 @@ impl Function {
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(n), Array(arr)) => Array(
 						arr
-							.windows(n as usize)
+							.windows(n.try_into().unwrap())
 							.map(|c| Array(c.to_vec()))
 							.collect()
 					),
