@@ -689,13 +689,13 @@ impl Function {
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a.max(b)),
 					(arr @ Array(_), Int(n)) | (Int(n), arr @ Array(_)) => {
-						let Some(arr) = arr.try_as_ints() else { panic!("max2: expected array of ints as one of the args") };
+						let Some(arr) = arr.try_as_ints() else { panic!("max2: expected flat array of ints as one of the args") };
 						let arr_max = *arr.iter().max().unwrap();
 						Int(arr_max.max(n))
 					}
 					(a @ Array(_), b @ Array(_)) => {
-						let Some(a) = a.try_as_ints() else { panic!("max2: expected array of ints as first arg") };
-						let Some(b) = b.try_as_ints() else { panic!("max2: expected array of ints as second arg") };
+						let Some(a) = a.try_as_ints() else { panic!("max2: expected flat array of ints as first arg") };
+						let Some(b) = b.try_as_ints() else { panic!("max2: expected flat array of ints as second arg") };
 						let a_max = *a.iter().max().unwrap();
 						let b_max = *b.iter().max().unwrap();
 						Int(a_max.max(b_max))
@@ -707,13 +707,13 @@ impl Function {
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a.min(b)),
 					(arr @ Array(_), Int(n)) | (Int(n), arr @ Array(_)) => {
-						let Some(arr) = arr.try_as_ints() else { panic!("min2: expected array of ints as one of the args") };
+						let Some(arr) = arr.try_as_ints() else { panic!("min2: expected flat array of ints as one of the args") };
 						let arr_min = *arr.iter().min().unwrap();
 						Int(arr_min.min(n))
 					}
 					(a @ Array(_), b @ Array(_)) => {
-						let Some(a) = a.try_as_ints() else { panic!("min2: expected array of ints as first arg") };
-						let Some(b) = b.try_as_ints() else { panic!("min2: expected array of ints as second arg") };
+						let Some(a) = a.try_as_ints() else { panic!("min2: expected flat array of ints as first arg") };
+						let Some(b) = b.try_as_ints() else { panic!("min2: expected flat array of ints as second arg") };
 						let a_min = *a.iter().min().unwrap();
 						let b_min = *b.iter().min().unwrap();
 						Int(a_min.min(b_min))
