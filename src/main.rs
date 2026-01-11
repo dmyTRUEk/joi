@@ -224,7 +224,7 @@ enum Function {
 	Argument,
 	Literal(Value),
 
-	// BIRDS:
+	// BIRDS FROM CH:
 	// src: combinatorylogic.com/table.html
 	Warbler(Box<[Function; 2]>), // W = f,x -> f(x,x)
 	Cardinal(Box<[Function; 3]>), // C = f,x,y -> f(y,x)
@@ -233,7 +233,6 @@ enum Function {
 	// Bunting // B2 = f,g,x,y,z -> f(g(x,y,z))
 	// Becard // B3? = f,g,h,x -> f(g(h(x)))
 	Starling(Box<[Function; 3]>), // S = f,g,x -> f(x, g(x))
-	Starling1(Box<[Function; 4]>), // S' = f,g,x,y -> f(x, g(x,y))
 	VioletStarling(Box<[Function; 3]>), // Sigma = f,g,x -> f(g(x), x)
 	// Dove // D = f,g,x,y -> f(x, g(y))
 	// ZebraDove // Delta = f,g,x,y -> f(g(x), y)
@@ -245,6 +244,22 @@ enum Function {
 	// GoldenEagle // epsilon = f,g,h,x,y -> f(g(x,y), z)
 	// Pheasant // Phi1 = f,g,h,x,y -> f(g(x,y), h(x,y))
 	// BaldEagle // hatE = f,g,h,x,y,z,t -> f(g(x,y),h(z,t))
+
+	// MORE BIRDS (from "To Mock a Mockingbird"):
+	// Finch // F = x,y,f -> f(y,x)
+	// Goldfinch // G = f,g,x,y -> f(y, g(x))
+	// Hummingbird // H = f,x,y -> f(x,y,x)
+	// Jay // J = f,x,y,z -> f(x, f(y,z))
+	// QueerBird // Q = f,g,x -> g(f(x))
+	// QuixoticBird // Q1 = f,x,g -> f(g(x))
+	// QuirkyBird // Q3 = f,x,g -> g(f(x))
+	// Robin // R = x,f,y -> f(y,x)
+	// Thrush // T = x,f -> f(x)
+	// Vireo // V = x,y,f -> f(x,y)
+	// ConverseWarbler // W' = x,f -> f(x,x)
+
+	// MY BIRDS:
+	Starling1(Box<[Function; 4]>), // S' = f,g,x,y -> f(x, g(x,y))
 
 	Absolute(Box<Function>),
 	CoDedup(Box<Function>),
@@ -332,6 +347,7 @@ impl Function {
 	fn from_strs(tokens: &mut Vec<&str>) -> Self {
 		use Function::*;
 		if tokens.is_empty() { return Argument }
+		// TODO: macro for [x,x,x]
 		macro_rules! a { () => (Box::new(Function::from_strs(tokens))) }
 		macro_rules! ab { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens) ])) }
 		macro_rules! abc { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens) ])) }
@@ -341,12 +357,14 @@ impl Function {
 			// TODO: _2 -> _ _ , _3 -> _ _ _ , ...
 			s if s.starts_with(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']) || s.contains(',') => Literal(Value::from(s)),
 
+			// CH:
 			"w" => Warbler(ab!()),
 			"c" => Cardinal(abc!()),
 			"s" => Starling(abc!()),
-			"s1" => Starling1(abcd!()),
 			"sigma" => VioletStarling(abc!()),
 			"phi" => Phoenix(abcd!()),
+			// my:
+			"s1" => Starling1(abcd!()),
 
 			"abs" => Absolute(a!()),
 			"codedup" => CoDedup(a!()),
@@ -423,6 +441,7 @@ impl Function {
 			Argument => args.remove(0),
 			Literal(v) => v.clone(),
 
+			// CH:
 			Warbler(fx) => {
 				let [f, x] = *fx.clone();
 				// assert_eq!(2, a.arity(), "warbler expected function with arity=2 but it is {}", a.arity());
@@ -444,13 +463,6 @@ impl Function {
 				let gx = g.eval(vec![x.clone()]);
 				f.eval(vec![x, gx])
 			}
-			Starling1(fgxy) => {
-				let [f, g, x, y] = *fgxy.clone();
-				let x = x.eval_(args);
-				let y = y.eval_(args);
-				let gxy = g.eval(vec![x.clone(), y]);
-				f.eval(vec![x, gxy])
-			}
 			VioletStarling(fgx) => {
 				let [f, g, x] = *fgx.clone();
 				let x = x.eval_(args);
@@ -463,6 +475,14 @@ impl Function {
 				let gx = g.eval(vec![x.clone()]);
 				let hx = h.eval(vec![x]);
 				f.eval(vec![gx, hx])
+			}
+			// my:
+			Starling1(fgxy) => {
+				let [f, g, x, y] = *fgxy.clone();
+				let x = x.eval_(args);
+				let y = y.eval_(args);
+				let gxy = g.eval(vec![x.clone(), y]);
+				f.eval(vec![x, gxy])
 			}
 
 			// FUNCTIONS ARITY 1
