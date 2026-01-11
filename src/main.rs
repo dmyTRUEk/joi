@@ -224,26 +224,27 @@ enum Function {
 	Argument,
 	Literal(Value),
 
+	// BIRDS:
 	// src: combinatorylogic.com/table.html
-	Warbler(Box<[Function; 2]>), // W
-	Cardinal(Box<[Function; 3]>), // C
-	// Bluebird // B
-	// Blackbird // B1
-	// Bunting // B2
-	// Becard // B3?
-	Starling(Box<[Function; 3]>), // S
-	Starling1(Box<[Function; 4]>), // S' = lambda f,g,x,y: f(x, g(x, y))
+	Warbler(Box<[Function; 2]>), // W = f,x -> f(x,x)
+	Cardinal(Box<[Function; 3]>), // C = f,x,y -> f(y,x)
+	// Bluebird // B = f,g,x -> f(g(x))
+	// Blackbird // B1 = f,g,x,y -> f(g(x,y))
+	// Bunting // B2 = f,g,x,y,z -> f(g(x,y,z))
+	// Becard // B3? = f,g,h,x -> f(g(h(x)))
+	Starling(Box<[Function; 3]>), // S = f,g,x -> f(x, g(x))
+	Starling1(Box<[Function; 4]>), // S' = f,g,x,y -> f(x, g(x,y))
 	VioletStarling(Box<[Function; 3]>), // Sigma = f,g,x -> f(g(x), x)
-	// Dove // D
-	// ZebraDove // Delta
-	// Phoenix // Phi
-	// Psi
-	// Dickcissel // D1
-	// Dovekie // D2
-	// Eagle // E
-	// GoldenEagle // epsilon
-	// Pheasant // Phi1
-	// BaldEagle // hatE
+	// Dove // D = f,g,x,y -> f(x, g(y))
+	// ZebraDove // Delta = f,g,x,y -> f(g(x), y)
+	// Phoenix // Phi = f,g,h,x -> f(g(x), h(x))
+	// Psi = f,g,x,y -> f(g(x), g(y))
+	// Dickcissel // D1 = f,g,x,y,z -> f(x, y, g(z)) ?
+	// Dovekie // D2 = f,g,h,x,y -> f(g(x), h(y)) ?
+	// Eagle // E = f,g,h,x,y -> f(x, g(y,z)) ?
+	// GoldenEagle // epsilon = f,g,h,x,y -> f(g(x,y), z) ?
+	// Pheasant // Phi1 = f,g,h,x,y -> f(g(x,y), h(x,y)) ?
+	// BaldEagle // hatE = f,g,h,x,y,z,t -> f(g(x,y),h(z,t)) ?
 
 	Absolute(Box<Function>),
 	CoDedup(Box<Function>),
