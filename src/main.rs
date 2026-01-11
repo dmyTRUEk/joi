@@ -237,7 +237,7 @@ enum Function {
 	VioletStarling(Box<[Function; 3]>), // Sigma = f,g,x -> f(g(x), x)
 	// Dove // D = f,g,x,y -> f(x, g(y))
 	// ZebraDove // Delta = f,g,x,y -> f(g(x), y)
-	// Phoenix // Phi = f,g,h,x -> f(g(x), h(x))
+	Phoenix(Box<[Function; 4]>), // Phi = f,g,h,x -> f(g(x), h(x))
 	// Psi = f,g,x,y -> f(g(x), g(y))
 	// Dickcissel // D1 = f,g,x,y,z -> f(x, y, g(z)) ?
 	// Dovekie // D2 = f,g,h,x,y -> f(g(x), h(y)) ?
@@ -345,6 +345,7 @@ impl Function {
 			"s" => Starling(abc!()),
 			"s1" => Starling1(abcd!()),
 			"sigma" => VioletStarling(abc!()),
+			"phi" => Phoenix(abcd!()),
 
 			"abs" => Absolute(a!()),
 			"codedup" => CoDedup(a!()),
@@ -451,6 +452,13 @@ impl Function {
 				let x = x.eval_(args);
 				let gx = g.eval(vec![x.clone()]);
 				f.eval(vec![gx, x])
+			}
+			Phoenix(fghx) => {
+				let [f, g, h, x] = *fghx.clone();
+				let x = x.eval_(args);
+				let gx = g.eval(vec![x.clone()]);
+				let hx = h.eval(vec![x]);
+				f.eval(vec![gx, hx])
 			}
 
 			// FUNCTIONS ARITY 1
@@ -1359,6 +1367,11 @@ mod eval {
 	mod tail {
 		use super::*;
 		#[test] fn _9_8_7_6_5() { assert_eq!(Value::from([8,7,6,5]), eval("9,8,7,6,5 :: tail")) }
+	}
+
+	mod phoenix {
+		use super::*;
+		#[test] fn add_sq_sqrt() { assert_eq!(Int(100_i64.pow(2) + 100_i64.isqrt()), eval("100 :: phi add _ _ sq _ sqrt _")) }
 	}
 }
 
