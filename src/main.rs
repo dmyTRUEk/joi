@@ -962,7 +962,7 @@ impl Function {
 					(Array(arr), Int(n)) | (Int(n), Array(arr)) => {
 						Array(arr[..n.try_into().unwrap()].to_vec())
 					}
-					_ => panic!("drop: expected int and array")
+					_ => panic!("take: expected int and array")
 				}
 			}
 			Windows(ab) => {
