@@ -260,6 +260,7 @@ enum Function {
 
 	// MY BIRDS:
 	Starling1(Box<[Function; 4]>), // S' = f,g,x,y -> f(x, g(x,y))
+	UmbralPhoenix(Box<[Function; 5]>), // Phi~ = f,g,h1,h2,x -> f(g(h1(x)), g(h2(x)))
 
 	Absolute(Box<Function>),
 	CoDedup(Box<Function>),
@@ -352,6 +353,7 @@ impl Function {
 		macro_rules! ab { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens) ])) }
 		macro_rules! abc { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens) ])) }
 		macro_rules! abcd { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens) ])) }
+		macro_rules! abcde { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens) ])) }
 		match tokens.remove(0) {
 			"_" => Argument,
 			// TODO: _2 -> _ _ , _3 -> _ _ _ , ...
@@ -365,6 +367,7 @@ impl Function {
 			"phi" => Phoenix(abcd!()),
 			// my:
 			"s1" => Starling1(abcd!()),
+			"phi~" => UmbralPhoenix(abcde!()),
 
 			"abs" => Absolute(a!()),
 			"codedup" => CoDedup(a!()),
@@ -483,6 +486,15 @@ impl Function {
 				let y = y.eval_(args);
 				let gxy = g.eval(vec![x.clone(), y]);
 				f.eval(vec![x, gxy])
+			}
+			UmbralPhoenix(fghhx) => {
+				let [f, g, h1, h2, x] = *fghhx.clone();
+				let x = x.eval_(args);
+				let h1x = h1.eval(vec![x.clone()]);
+				let h2x = h2.eval(vec![x]);
+				let gh1x = g.eval(vec![h1x]);
+				let gh2x = g.eval(vec![h2x]);
+				f.eval(vec![gh1x, gh2x])
 			}
 
 			// FUNCTIONS ARITY 1
@@ -1428,6 +1440,12 @@ mod eval {
 	mod inc {
 		use super::*;
 		#[test] fn _42() { assert_eq!(Int(43), eval("42 :: inc")) }
+	}
+
+	mod umbral_phoenix {
+		use super::*;
+		#[test] fn add_sq_inc_dec() { assert_eq!(Int(6*6 + 4*4), eval("5 :: phi~ add _ _ sq _ inc _ dec _")) }
+		#[test] fn sub_sq_inc_dec() { assert_eq!(Int(6*6 - 4*4), eval("5 :: phi~ sub _ _ sq _ inc _ dec _")) }
 	}
 }
 
