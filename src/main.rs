@@ -233,7 +233,7 @@ enum Function {
 	// Becard // B3?
 	Starling(Box<[Function; 3]>), // S
 	Starling1(Box<[Function; 4]>), // S' = lambda f,g,x,y: f(x, g(x, y))
-	// VioletStarling // Sigma
+	VioletStarling(Box<[Function; 3]>), // Sigma = f,g,x -> f(g(x), x)
 	// Dove // D
 	// ZebraDove // Delta
 	// Phoenix // Phi
@@ -337,6 +337,7 @@ impl Function {
 			"c" => Cardinal(abc!()),
 			"s" => Starling(abc!()),
 			"s1" => Starling1(abcd!()),
+			"sigma" => VioletStarling(abc!()),
 
 			"abs" => Absolute(a!()),
 			"codedup" => CoDedup(a!()),
@@ -429,6 +430,12 @@ impl Function {
 				let y = y.eval_(args);
 				let gxy = g.eval(vec![x.clone(), y]);
 				f.eval(vec![x, gxy])
+			}
+			VioletStarling(fgx) => {
+				let [f, g, x] = *fgx.clone();
+				let x = x.eval_(args);
+				let gx = g.eval(vec![x.clone()]);
+				f.eval(vec![gx, x])
 			}
 
 			// FUNCTIONS ARITY 1
@@ -1220,6 +1227,11 @@ mod eval {
 		}
 		#[test] fn max() { assert_eq!(Value::from([0,1,1,2,2,2,2,3,3,3]), eval("0,1,0,2,1,0,1,3,0,1 :: running2 max2")) }
 		#[test] fn min() { assert_eq!(Value::from([2,2,2,1,1,1,1,0,0,0]), eval("2,3,2,1,2,1,1,0,3,1 :: running2 min2")) }
+	}
+
+	mod violet_starling {
+		use super::*;
+		#[test] fn prepend_min() { assert_eq!(Value::from([1,1,2,3]), eval("1,2,3 :: sigma join _ _ min")) }
 	}
 }
 
