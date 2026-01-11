@@ -239,12 +239,12 @@ enum Function {
 	// ZebraDove // Delta = f,g,x,y -> f(g(x), y)
 	Phoenix(Box<[Function; 4]>), // Phi = f,g,h,x -> f(g(x), h(x))
 	// Psi = f,g,x,y -> f(g(x), g(y))
-	// Dickcissel // D1 = f,g,x,y,z -> f(x, y, g(z)) ?
-	// Dovekie // D2 = f,g,h,x,y -> f(g(x), h(y)) ?
-	// Eagle // E = f,g,h,x,y -> f(x, g(y,z)) ?
-	// GoldenEagle // epsilon = f,g,h,x,y -> f(g(x,y), z) ?
-	// Pheasant // Phi1 = f,g,h,x,y -> f(g(x,y), h(x,y)) ?
-	// BaldEagle // hatE = f,g,h,x,y,z,t -> f(g(x,y),h(z,t)) ?
+	// Dickcissel // D1 = f,g,x,y,z -> f(x, y, g(z))
+	// Dovekie // D2 = f,g,h,x,y -> f(g(x), h(y))
+	// Eagle // E = f,g,h,x,y -> f(x, g(y,z))
+	// GoldenEagle // epsilon = f,g,h,x,y -> f(g(x,y), z)
+	// Pheasant // Phi1 = f,g,h,x,y -> f(g(x,y), h(x,y))
+	// BaldEagle // hatE = f,g,h,x,y,z,t -> f(g(x,y),h(z,t))
 
 	Absolute(Box<Function>),
 	CoDedup(Box<Function>),
