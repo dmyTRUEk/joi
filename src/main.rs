@@ -298,11 +298,12 @@ enum Function {
 	// Multiply(Box<[Function; 2]>),
 	Reduce(Box<[Function; 2]>),
 	// Rotate(Box<[Function; 2]>),
+	Running(Box<[Function; 2]>), // like running sum, `running_max`
+	Running2(Box<[Function; 2]>), // like running sum, `running_max`
 	Subtract(Box<[Function; 2]>),
 	Windows(Box<[Function; 2]>),
 	Zip(Box<[Function; 2]>),
 
-	// Running // like running sum, `running_max`
 	// Slice
 	// SplitAtIndex/Function
 
@@ -375,6 +376,8 @@ impl Function {
 			"mod" => Modulo(ab!()),
 			"modf" => ModuloFake(ab!()),
 			"reduce" => Reduce(ab!()),
+			"running" => Running(ab!()),
+			"running2" => Running2(ab!()),
 			"sub" => Subtract(ab!()),
 			"windows" => Windows(ab!()),
 			"zip" => Zip(ab!()),
@@ -740,6 +743,42 @@ impl Function {
 							.unwrap()
 					}
 					Int(_) => panic!("reduce: cant use on int")
+				}
+			}
+			Running(fx) => {
+				let [f, x] = *fx.clone();
+				match x.eval_(args) {
+					Array(arr) => Array(
+						arr.into_iter().fold(vec![], |mut acc, el| {
+							if acc.is_empty() {
+								vec![el]
+							} else {
+								let mut acc_to_eval = acc.clone();
+								acc_to_eval.push(el);
+								let new = f.eval(vec![Array(acc_to_eval)]);
+								acc.push(new);
+								acc
+							}
+						})
+					),
+					Int(_) => panic!("running: cant use on int")
+				}
+			}
+			Running2(fx) => {
+				let [f, x] = *fx.clone();
+				match x.eval_(args) {
+					Array(arr) => Array(
+						arr.into_iter().fold(vec![], |mut acc, el| {
+							if acc.is_empty() {
+								vec![el]
+							} else {
+								let new = f.eval(vec![acc.last().unwrap().clone(), el]);
+								acc.push(new);
+								acc
+							}
+						})
+					),
+					Int(_) => panic!("running2: cant use on int")
 				}
 			}
 			Subtract(ab) => {
@@ -1130,6 +1169,22 @@ mod eval {
 			#[test] fn _1_2_3__3() { assert_eq!(Value::from([1,2,3,3]), eval("1,2,3 3 :: s1 join _ _ max2")) }
 			#[test] fn _1_2_3__9() { assert_eq!(Value::from([1,2,3,9]), eval("1,2,3 9 :: s1 join _ _ max2")) }
 		}
+	}
+
+	mod running {
+		use super::*;
+		#[test] fn max() { assert_eq!(Value::from([0,1,1,2,2,2,2,3,3,3]), eval("0,1,0,2,1,0,1,3,0,1 :: running max")) }
+		#[test] fn min() { assert_eq!(Value::from([2,2,2,1,1,1,1,0,0,0]), eval("2,3,2,1,2,1,1,0,3,1 :: running min")) }
+	}
+	mod running2 {
+		use super::*;
+		mod sum {
+			use super::*;
+			#[test] fn _1_1_1_1() { assert_eq!(Value::from([1,2,3,4]), eval("1,1,1,1 :: running2 add")) }
+			#[test] fn _1_2_3_4() { assert_eq!(Value::from([1,3,6,10]), eval("1,2,3,4 :: running2 add")) }
+		}
+		#[test] fn max() { assert_eq!(Value::from([0,1,1,2,2,2,2,3,3,3]), eval("0,1,0,2,1,0,1,3,0,1 :: running2 max2")) }
+		#[test] fn min() { assert_eq!(Value::from([2,2,2,1,1,1,1,0,0,0]), eval("2,3,2,1,2,1,1,0,3,1 :: running2 min2")) }
 	}
 }
 
