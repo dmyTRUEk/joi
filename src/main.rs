@@ -79,7 +79,7 @@ enum Value {
 	Array(Vec<Value>),
 }
 impl Value {
-	fn deep_map(self, f: fn(i64) -> Value) -> Value {
+	fn deep_map(self, f: fn(i64) -> Self) -> Self {
 		use Value::*;
 		match self {
 			Int(n) => f(n),
@@ -224,9 +224,26 @@ enum Function {
 	Argument,
 	Literal(Value),
 
-	Warbler(Box<[Function; 2]>),
-	Cardinal(Box<[Function; 3]>),
-	Starling(Box<[Function; 3]>),
+	// src: combinatorylogic.com/table.html
+	Warbler(Box<[Function; 2]>), // W
+	Cardinal(Box<[Function; 3]>), // C
+	// Bluebird // B
+	// Blackbird // B1
+	// Bunting // B2
+	// Becard // B3?
+	Starling(Box<[Function; 3]>), // S
+	Starling1(Box<[Function; 4]>), // S' = lambda f,g,x,y: f(x, g(x, y))
+	// VioletStarling // Sigma
+	// Dove // D
+	// ZebraDove // Delta
+	// Phoenix // Phi
+	// Psi
+	// Dickcissel // D1
+	// Dovekie // D2
+	// Eagle // E
+	// GoldenEagle // epsilon
+	// Pheasant // Phi1
+	// BaldEagle // hatE
 
 	Absolute(Box<Function>),
 	CoDedup(Box<Function>),
@@ -285,6 +302,7 @@ enum Function {
 	Windows(Box<[Function; 2]>),
 	Zip(Box<[Function; 2]>),
 
+	// Running // like running sum, `running_max`
 	// Slice
 	// SplitAtIndex/Function
 
@@ -308,13 +326,16 @@ impl Function {
 		macro_rules! a { () => (Box::new(Function::from_strs(tokens))) }
 		macro_rules! ab { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens) ])) }
 		macro_rules! abc { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens) ])) }
+		macro_rules! abcd { () => (Box::new([ Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens), Function::from_strs(tokens) ])) }
 		match tokens.remove(0) {
 			"_" => Argument,
+			// TODO: _2 -> _ _ , _3 -> _ _ _ , ...
 			s if s.starts_with(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']) || s.contains(',') => Literal(Value::from(s)),
 
 			"w" => Warbler(ab!()),
 			"c" => Cardinal(abc!()),
 			"s" => Starling(abc!()),
+			"s1" => Starling1(abcd!()),
 
 			"abs" => Absolute(a!()),
 			"codedup" => CoDedup(a!()),
@@ -398,6 +419,13 @@ impl Function {
 				let x = x.eval_(args);
 				let gx = g.eval(vec![x.clone()]);
 				f.eval(vec![x, gx])
+			}
+			Starling1(fgxy) => {
+				let [f, g, x, y] = *fgxy.clone();
+				let x = x.eval_(args);
+				let y = y.eval_(args);
+				let gxy = g.eval(vec![x.clone(), y]);
+				f.eval(vec![x, gxy])
 			}
 
 			// FUNCTIONS ARITY 1
@@ -912,6 +940,7 @@ mod eval {
 		use super::*;
 		#[test] fn add_aka_sum() { assert_eq!(Int(10), eval("1,2,3,4 :: reduce add")) }
 		#[test] fn add_aka_sum_via_range() { assert_eq!(Int(10), eval("4 :: reduce add _ _ range")) }
+		#[test] fn running_max() { assert_eq!(Value::from([0,1,1,2,2,2,2,3,3,3]), eval("0,1,0,2,1,0,1,3,0,1 :: reduce s1 join _ _ max2")) }
 	}
 
 	mod if_ {
@@ -1089,6 +1118,18 @@ mod eval {
 		#[test] fn int_arr() { assert_eq!(Value::from([3,4,5,6]), eval("3 4,5,6 :: join")) }
 		#[test] fn arr_int() { assert_eq!(Value::from([3,4,5,6]), eval("3,4,5 6 :: join")) }
 		#[test] fn arr_arr() { assert_eq!(Value::from([3,4,5,6,7]), eval("3,4,5 6,7 :: join")) }
+	}
+
+	mod starling1 {
+		use super::*;
+		mod append_max {
+			use super::*;
+			#[test] fn _1_2_3__0() { assert_eq!(Value::from([1,2,3,3]), eval("1,2,3 0 :: s1 join _ _ max2")) }
+			#[test] fn _1_2_3__1() { assert_eq!(Value::from([1,2,3,3]), eval("1,2,3 1 :: s1 join _ _ max2")) }
+			#[test] fn _1_2_3__2() { assert_eq!(Value::from([1,2,3,3]), eval("1,2,3 2 :: s1 join _ _ max2")) }
+			#[test] fn _1_2_3__3() { assert_eq!(Value::from([1,2,3,3]), eval("1,2,3 3 :: s1 join _ _ max2")) }
+			#[test] fn _1_2_3__9() { assert_eq!(Value::from([1,2,3,9]), eval("1,2,3 9 :: s1 join _ _ max2")) }
+		}
 	}
 }
 
