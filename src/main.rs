@@ -657,14 +657,36 @@ impl Function {
 				let [a, b] = *ab.clone();
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a.max(b)),
-					_ => panic!("max2: expected int and int")
+					(arr @ Array(_), Int(n)) | (Int(n), arr @ Array(_)) => {
+						let Some(arr) = arr.try_as_ints() else { panic!("max2: expected array of ints as one of the args") };
+						let arr_max = *arr.iter().max().unwrap();
+						Int(arr_max.max(n))
+					}
+					(a @ Array(_), b @ Array(_)) => {
+						let Some(a) = a.try_as_ints() else { panic!("max2: expected array of ints as first arg") };
+						let Some(b) = b.try_as_ints() else { panic!("max2: expected array of ints as first arg") };
+						let a_max = *a.iter().max().unwrap();
+						let b_max = *b.iter().max().unwrap();
+						Int(a_max.max(b_max))
+					}
 				}
 			}
 			Min2(ab) => {
 				let [a, b] = *ab.clone();
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a.min(b)),
-					_ => panic!("min2: expected int and int")
+					(arr @ Array(_), Int(n)) | (Int(n), arr @ Array(_)) => {
+						let Some(arr) = arr.try_as_ints() else { panic!("min2: expected array of ints as one of the args") };
+						let arr_min = *arr.iter().min().unwrap();
+						Int(arr_min.min(n))
+					}
+					(a @ Array(_), b @ Array(_)) => {
+						let Some(a) = a.try_as_ints() else { panic!("min2: expected array of ints as first arg") };
+						let Some(b) = b.try_as_ints() else { panic!("min2: expected array of ints as first arg") };
+						let a_min = *a.iter().min().unwrap();
+						let b_min = *b.iter().min().unwrap();
+						Int(a_min.min(b_min))
+					}
 				}
 			}
 			Modulo(ab) => {
@@ -1049,12 +1071,16 @@ mod eval {
 		#[test] fn _0__0() { assert_eq!(Int(0), eval("0 0 :: max2")) }
 		#[test] fn _0__9() { assert_eq!(Int(9), eval("0 9 :: max2")) }
 		#[test] fn _9__9() { assert_eq!(Int(9), eval("9 9 :: max2")) }
+		#[test] fn _1_2_3__0() { assert_eq!(Int(3), eval("1,2,3 0 :: max2")) }
+		#[test] fn _1_2_3__9() { assert_eq!(Int(9), eval("1,2,3 9 :: max2")) }
 	}
 	mod min2 {
 		use super::*;
 		#[test] fn _0__0() { assert_eq!(Int(0), eval("0 0 :: min2")) }
 		#[test] fn _0__9() { assert_eq!(Int(0), eval("0 9 :: min2")) }
 		#[test] fn _9__9() { assert_eq!(Int(9), eval("9 9 :: min2")) }
+		#[test] fn _1_2_3__0() { assert_eq!(Int(0), eval("1,2,3 0 :: min2")) }
+		#[test] fn _1_2_3__9() { assert_eq!(Int(1), eval("1,2,3 9 :: min2")) }
 	}
 
 	mod join {
