@@ -322,8 +322,8 @@ enum Function {
 	// Multiply(Box<[Function; 2]>),
 	Reduce(Box<[Function; 2]>),
 	// Rotate(Box<[Function; 2]>),
-	Running(Box<[Function; 2]>), // like running sum, `running_max`
-	Running2(Box<[Function; 2]>), // like running sum, `running_max`
+	Scan(Box<[Function; 2]>), // like running sum
+	Scan2(Box<[Function; 2]>), // change name with `scan`?
 	Subtract(Box<[Function; 2]>),
 	Take(Box<[Function; 2]>), // take n first from array
 	Windows(Box<[Function; 2]>),
@@ -418,8 +418,8 @@ impl Function {
 			"mod" => Modulo(ab!()),
 			"modf" => ModuloFake(ab!()),
 			"reduce" => Reduce(ab!()),
-			"running" => Running(ab!()),
-			"running2" => Running2(ab!()),
+			"scan" => Scan(ab!()),
+			"scan2" => Scan2(ab!()),
 			"sub" => Subtract(ab!()),
 			"take" => Take(ab!()),
 			"windows" => Windows(ab!()),
@@ -898,7 +898,7 @@ impl Function {
 					Int(_) => panic!("reduce: cant use on int")
 				}
 			}
-			Running(fx) => {
+			Scan(fx) => {
 				let [f, x] = *fx.clone();
 				match x.eval_(args) {
 					Array(arr) => Array(
@@ -914,10 +914,10 @@ impl Function {
 							}
 						})
 					),
-					Int(_) => panic!("running: cant use on int")
+					Int(_) => panic!("scan: cant use on int")
 				}
 			}
-			Running2(fx) => {
+			Scan2(fx) => {
 				let [f, x] = *fx.clone();
 				match x.eval_(args) {
 					Array(arr) => Array(
@@ -931,7 +931,7 @@ impl Function {
 							}
 						})
 					),
-					Int(_) => panic!("running2: cant use on int")
+					Int(_) => panic!("scan2: cant use on int")
 				}
 			}
 			Subtract(ab) => {
@@ -1165,7 +1165,7 @@ mod eval {
 		use super::*;
 		#[test] fn add_aka_sum() { assert_eq!(Int(10), eval("1,2,3,4 :: reduce add")) }
 		#[test] fn add_aka_sum_via_range() { assert_eq!(Int(10), eval("4 :: reduce add _ _ range")) }
-		#[test] fn running_max() { assert_eq!(Value::from([0,1,1,2,2,2,2,3,3,3]), eval("0,1,0,2,1,0,1,3,0,1 :: reduce s1 join _ _ max2")) }
+		#[test] fn scan_max() { assert_eq!(Value::from([0,1,1,2,2,2,2,3,3,3]), eval("0,1,0,2,1,0,1,3,0,1 :: reduce s1 join _ _ max2")) }
 	}
 
 	mod if_ {
@@ -1357,20 +1357,20 @@ mod eval {
 		}
 	}
 
-	mod running {
+	mod scan {
 		use super::*;
-		#[test] fn max() { assert_eq!(Value::from([0,1,1,2,2,2,2,3,3,3]), eval("0,1,0,2,1,0,1,3,0,1 :: running max")) }
-		#[test] fn min() { assert_eq!(Value::from([2,2,2,1,1,1,1,0,0,0]), eval("2,3,2,1,2,1,1,0,3,1 :: running min")) }
+		#[test] fn max() { assert_eq!(Value::from([0,1,1,2,2,2,2,3,3,3]), eval("0,1,0,2,1,0,1,3,0,1 :: scan max")) }
+		#[test] fn min() { assert_eq!(Value::from([2,2,2,1,1,1,1,0,0,0]), eval("2,3,2,1,2,1,1,0,3,1 :: scan min")) }
 	}
-	mod running2 {
+	mod scan2 {
 		use super::*;
 		mod sum {
 			use super::*;
-			#[test] fn _1_1_1_1() { assert_eq!(Value::from([1,2,3,4]), eval("1,1,1,1 :: running2 add")) }
-			#[test] fn _1_2_3_4() { assert_eq!(Value::from([1,3,6,10]), eval("1,2,3,4 :: running2 add")) }
+			#[test] fn _1_1_1_1() { assert_eq!(Value::from([1,2,3,4]), eval("1,1,1,1 :: scan2 add")) }
+			#[test] fn _1_2_3_4() { assert_eq!(Value::from([1,3,6,10]), eval("1,2,3,4 :: scan2 add")) }
 		}
-		#[test] fn max() { assert_eq!(Value::from([0,1,1,2,2,2,2,3,3,3]), eval("0,1,0,2,1,0,1,3,0,1 :: running2 max2")) }
-		#[test] fn min() { assert_eq!(Value::from([2,2,2,1,1,1,1,0,0,0]), eval("2,3,2,1,2,1,1,0,3,1 :: running2 min2")) }
+		#[test] fn max() { assert_eq!(Value::from([0,1,1,2,2,2,2,3,3,3]), eval("0,1,0,2,1,0,1,3,0,1 :: scan2 max2")) }
+		#[test] fn min() { assert_eq!(Value::from([2,2,2,1,1,1,1,0,0,0]), eval("2,3,2,1,2,1,1,0,3,1 :: scan2 min2")) }
 	}
 
 	mod violet_starling {

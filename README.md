@@ -29,7 +29,7 @@ Array + Combinatory + Functional programming language
 ```joi
 4,2,0,3,2,5 :: phi~
   add _ _
-  sum sigma sub _ _ running2 max2 _ _ _ _
+  sum sigma sub _ _ scan2 max2 _ _ _ _
   s take imaxf _ _ _ _
   s take imaxl rev
 > 9
