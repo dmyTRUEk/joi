@@ -271,6 +271,7 @@ enum Function {
 	Not(Box<Function>),
 	// Product(Box<Function>),
 	Range(Box<Function>),
+	Reverse(Box<Function>),
 	Sort(Box<Function>),
 	Square(Box<Function>),
 	SquareRoot(Box<Function>),
@@ -365,6 +366,7 @@ impl Function {
 			"neg" => Negate(a!()),
 			"not" => Not(a!()),
 			"range" => Range(a!()),
+			"rev" => Reverse(a!()),
 			"sort" => Sort(a!()),
 			"sq" => Square(a!()),
 			"sqrt" => SquareRoot(a!()),
@@ -569,6 +571,12 @@ impl Function {
 			}
 			Range(a) => {
 				a.eval_(args).deep_map(|n| Array( (1..=n).map(Int).collect() ))
+			}
+			Reverse(a) => {
+				match a.eval_(args) {
+					Array(mut arr) => Array({ arr.reverse(); arr }),
+					_ => panic!("rev: expected array")
+				}
 			}
 			Sort(a) => {
 				match a.eval_(args) {
@@ -1372,6 +1380,11 @@ mod eval {
 	mod phoenix {
 		use super::*;
 		#[test] fn add_sq_sqrt() { assert_eq!(Int(100_i64.pow(2) + 100_i64.isqrt()), eval("100 :: phi add _ _ sq _ sqrt _")) }
+	}
+
+	mod reverse {
+		use super::*;
+		#[test] fn _3_1_4_1_5() { assert_eq!(Value::from([5,1,4,1,3]), eval("3,1,4,1,5 :: rev")) }
 	}
 }
 
