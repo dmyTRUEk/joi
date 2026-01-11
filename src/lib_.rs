@@ -96,3 +96,84 @@ mod transpose {
 	#[test] fn _1_2__3_4__5_6() { assert_eq!(vec![vec![1,2,3],vec![4,5,6]], transpose(vec![vec![1,4],vec![2,5],vec![3,6]])) }
 }
 
+
+
+pub trait IndexOfMaxMin {
+	fn index_of_max_first(&self) -> usize;
+	fn index_of_max_last(&self) -> usize;
+	fn index_of_min_first(&self) -> usize;
+	fn index_of_min_last(&self) -> usize;
+}
+impl<T: PartialOrd> IndexOfMaxMin for Vec<T> {
+	fn index_of_max_first(&self) -> usize {
+		let mut index_of_max_first = 0;
+		let (mut max, v) = self.split_first().unwrap();
+		for (i, el) in v.iter().enumerate() {
+			if el > max {
+				max = el;
+				index_of_max_first = i + 1; // +1 bc we popped first element
+			}
+		}
+		index_of_max_first
+	}
+	fn index_of_max_last(&self) -> usize {
+		let mut index_of_max_last = 0;
+		let (mut max, v) = self.split_first().unwrap();
+		for (i, el) in v.iter().enumerate() {
+			if el >= max {
+				max = el;
+				index_of_max_last = i + 1; // +1 bc we popped first element
+			}
+		}
+		index_of_max_last
+	}
+	fn index_of_min_first(&self) -> usize {
+		let mut index_of_min_first = 0;
+		let (mut min, v) = self.split_first().unwrap();
+		for (i, el) in v.iter().enumerate() {
+			if el < min {
+				min = el;
+				index_of_min_first = i + 1; // +1 bc we popped first element
+			}
+		}
+		index_of_min_first
+	}
+	fn index_of_min_last(&self) -> usize {
+		let mut index_of_min_last = 0;
+		let (mut min, v) = self.split_first().unwrap();
+		for (i, el) in v.iter().enumerate() {
+			if el <= min {
+				min = el;
+				index_of_min_last = i + 1; // +1 bc we popped first element
+			}
+		}
+		index_of_min_last
+	}
+}
+#[cfg(test)]
+mod index_of {
+	use super::*;
+	mod max {
+		use super::*;
+		mod first {
+			use super::*;
+			#[test] fn _5_3_8_0_9_1_2_0_9_6_7_4() { assert_eq!(4, vec![5,3,8,0,9,1,2,0,9,6,7,4].index_of_max_first()) }
+		}
+		mod last {
+			use super::*;
+			#[test] fn _5_3_8_0_9_1_2_0_9_6_7_4() { assert_eq!(8, vec![5,3,8,0,9,1,2,0,9,6,7,4].index_of_max_last()) }
+		}
+	}
+	mod min {
+		use super::*;
+		mod first {
+			use super::*;
+			#[test] fn _5_3_8_0_9_1_2_0_9_6_7_4() { assert_eq!(3, vec![5,3,8,0,9,1,2,0,9,6,7,4].index_of_min_first()) }
+		}
+		mod last {
+			use super::*;
+			#[test] fn _5_3_8_0_9_1_2_0_9_6_7_4() { assert_eq!(7, vec![5,3,8,0,9,1,2,0,9,6,7,4].index_of_min_last()) }
+		}
+	}
+}
+

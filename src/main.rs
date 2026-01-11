@@ -255,6 +255,10 @@ enum Function {
 	// Head(Box<Function>), // everything but last
 	Identity(Box<Function>),
 	// Increase(Box<Function>),
+	IndexOfMaxFirst(Box<Function>),
+	IndexOfMaxLast(Box<Function>),
+	IndexOfMinFirst(Box<Function>),
+	IndexOfMinLast(Box<Function>),
 	IsEven(Box<Function>),
 	// IsOdd(Box<Function>),
 	IsPositive(Box<Function>),
@@ -345,6 +349,10 @@ impl Function {
 			"dedup" => Dedup(a!()),
 			"first" => First(a!()),
 			"id" => Identity(a!()),
+			"imaxf" => IndexOfMaxFirst(a!()),
+			"imaxl" => IndexOfMaxLast(a!()),
+			"iminf" => IndexOfMinFirst(a!()),
+			"iminl" => IndexOfMinLast(a!()),
 			"is-even" => IsEven(a!()),
 			"is-pos" => IsPositive(a!()),
 			"last" => Last(a!()),
@@ -468,6 +476,42 @@ impl Function {
 			}
 			Identity(a) => {
 				a.eval_(args)
+			}
+			IndexOfMaxFirst(a) => {
+				match a.eval_(args) {
+					arr @ Array(_) => {
+						let Some(arr) = arr.try_as_ints() else { panic!("imaxf: expected flat array of ints") };
+						Int(arr.index_of_max_first() as i64)
+					}
+					_ => panic!("imaxf: expected array")
+				}
+			}
+			IndexOfMaxLast(a) => {
+				match a.eval_(args) {
+					arr @ Array(_) => {
+						let Some(arr) = arr.try_as_ints() else { panic!("imaxl: expected flat array of ints") };
+						Int(arr.index_of_max_last() as i64)
+					}
+					_ => panic!("imaxl: expected array")
+				}
+			}
+			IndexOfMinFirst(a) => {
+				match a.eval_(args) {
+					arr @ Array(_) => {
+						let Some(arr) = arr.try_as_ints() else { panic!("iminf: expected flat array of ints") };
+						Int(arr.index_of_min_first() as i64)
+					}
+					_ => panic!("iminf: expected array")
+				}
+			}
+			IndexOfMinLast(a) => {
+				match a.eval_(args) {
+					arr @ Array(_) => {
+						let Some(arr) = arr.try_as_ints() else { panic!("iminl: expected flat array of ints") };
+						Int(arr.index_of_min_last() as i64)
+					}
+					_ => panic!("iminl: expected array")
+				}
 			}
 			IsEven(a) => {
 				a.eval_(args).deep_map(|n| Int((n % 2 == 0) as i64))
@@ -1233,6 +1277,32 @@ mod eval {
 	mod violet_starling {
 		use super::*;
 		#[test] fn prepend_min() { assert_eq!(Value::from([1,1,2,3]), eval("1,2,3 :: sigma join _ _ min")) }
+	}
+
+	mod index_of {
+		use super::*;
+		mod max {
+			use super::*;
+			mod first {
+				use super::*;
+				#[test] fn _5_3_8_0_9_1_2_0_9_6_7_4() { assert_eq!(Int(4), eval("5,3,8,0,9,1,2,0,9,6,7,4 :: imaxf")) }
+			}
+			mod last {
+				use super::*;
+				#[test] fn _5_3_8_0_9_1_2_0_9_6_7_4() { assert_eq!(Int(8), eval("5,3,8,0,9,1,2,0,9,6,7,4 :: imaxl")) }
+			}
+		}
+		mod min {
+			use super::*;
+			mod first {
+				use super::*;
+				#[test] fn _5_3_8_0_9_1_2_0_9_6_7_4() { assert_eq!(Int(3), eval("5,3,8,0,9,1,2,0,9,6,7,4 :: iminf")) }
+			}
+			mod last {
+				use super::*;
+				#[test] fn _5_3_8_0_9_1_2_0_9_6_7_4() { assert_eq!(Int(7), eval("5,3,8,0,9,1,2,0,9,6,7,4 :: iminl")) }
+			}
+		}
 	}
 }
 
