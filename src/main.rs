@@ -272,7 +272,7 @@ enum Function {
 	IsLess(Box<[Function; 2]>),
 	IsLessEqual(Box<[Function; 2]>),
 	IsNotEqual(Box<[Function; 2]>),
-	// Join(Box<[Function; 2]>),
+	Join(Box<[Function; 2]>),
 	Map(Box<[Function; 2]>),
 	Max2(Box<[Function; 2]>),
 	Min2(Box<[Function; 2]>),
@@ -347,6 +347,7 @@ impl Function {
 			">" => IsGreater(ab!()),
 			">=" => IsGreaterEqual(ab!()),
 			"filter" => Filter(ab!()),
+			"join" => Join(ab!()),
 			"map" => Map(ab!()),
 			"max2" => Max2(ab!()),
 			"min2" => Min2(ab!()),
@@ -628,6 +629,15 @@ impl Function {
 						)
 					}
 					Int(_) => panic!("filter: cant use on int")
+				}
+			}
+			Join(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Int(a), Int(b)) => Array(vec![Int(a), Int(b)]),
+					(a @ Int(_), Array(mut b)) => Array({ b.insert(0, a); b }),
+					(Array(mut a), b @ Int(_)) => Array({ a.push(b); a }),
+					(Array(mut a), Array(b)) => Array({ a.extend(b); a }),
 				}
 			}
 			Map(fx) => {
@@ -1045,6 +1055,14 @@ mod eval {
 		#[test] fn _0__0() { assert_eq!(Int(0), eval("0 0 :: min2")) }
 		#[test] fn _0__9() { assert_eq!(Int(0), eval("0 9 :: min2")) }
 		#[test] fn _9__9() { assert_eq!(Int(9), eval("9 9 :: min2")) }
+	}
+
+	mod join {
+		use super::*;
+		#[test] fn int_int() { assert_eq!(Value::from([3,4]), eval("3 4 :: join")) }
+		#[test] fn int_arr() { assert_eq!(Value::from([3,4,5,6]), eval("3 4,5,6 :: join")) }
+		#[test] fn arr_int() { assert_eq!(Value::from([3,4,5,6]), eval("3,4,5 6 :: join")) }
+		#[test] fn arr_arr() { assert_eq!(Value::from([3,4,5,6,7]), eval("3,4,5 6,7 :: join")) }
 	}
 }
 
