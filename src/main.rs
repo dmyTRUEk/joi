@@ -65,6 +65,7 @@ fn main() {
 
 	// let result = eval_(&program.join(" "), debug_parsing, debug_eval);
 	let result = eval_(&program.join(" "), debug, debug);
+	println!();
 	println!("result: {result}");
 }
 
