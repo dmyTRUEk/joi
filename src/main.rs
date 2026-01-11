@@ -548,7 +548,18 @@ impl Function {
 				let [a, b] = *ab.clone();
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a + b),
-					_ => todo!()
+					(arr @ Array(_), Int(n)) | (Int(n), arr @ Array(_)) => {
+						let Some(arr) = arr.try_as_ints() else { panic!("add: expected flat array of ints") };
+						let res = arr.into_iter().map(|a| Int(a + n)).collect();
+						Array(res)
+					}
+					(a @ Array(_), b @ Array(_)) => {
+						let Some(a) = a.try_as_ints() else { panic!("add: expected flat array of ints as first arg") };
+						let Some(b) = b.try_as_ints() else { panic!("add: expected flat array of ints as second arg") };
+						assert_eq!(a.len(), b.len(), "add: expected arrays to have same length");
+						let res = a.into_iter().zip(b).map(|(a, b)| Int(a + b)).collect();
+						Array(res)
+					}
 				}
 			}
 			At(ab) => {
@@ -785,7 +796,23 @@ impl Function {
 				let [a, b] = *ab.clone();
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a - b),
-					_ => todo!()
+					(arr @ Array(_), Int(n)) => {
+						let Some(arr) = arr.try_as_ints() else { panic!("sub: expected flat array of ints") };
+						let res = arr.into_iter().map(|a| Int(a - n)).collect();
+						Array(res)
+					}
+					(Int(n), arr @ Array(_)) => {
+						let Some(arr) = arr.try_as_ints() else { panic!("sub: expected flat array of ints") };
+						let res = arr.into_iter().map(|a| Int(n - a)).collect();
+						Array(res)
+					}
+					(a @ Array(_), b @ Array(_)) => {
+						let Some(a) = a.try_as_ints() else { panic!("sub: expected flat array of ints as first arg") };
+						let Some(b) = b.try_as_ints() else { panic!("sub: expected flat array of ints as second arg") };
+						assert_eq!(a.len(), b.len(), "sub: expected arrays to have same length");
+						let res = a.into_iter().zip(b).map(|(a, b)| Int(a - b)).collect();
+						Array(res)
+					}
 				}
 			}
 			Windows(ab) => {
@@ -913,11 +940,19 @@ mod eval {
 
 	mod add {
 		use super::*;
-		#[test] fn int_int() { assert_eq!(Int(2+2), eval("2 2 :: add")) }
-		#[test] fn arr_int() { assert_eq!(Int(2+2), eval("2 2 :: add")) }
+		#[test] fn int_int() { assert_eq!(Int(2+3), eval("2 3 :: add")) }
+		#[test] fn arr_int() { assert_eq!(Value::from([3,4,5]), eval("1,2,3 2 :: add")) }
+		#[test] fn int_arr() { assert_eq!(Value::from([3,4,5]), eval("2 1,2,3 :: add")) }
+		#[test] fn arr_arr() { assert_eq!(Value::from([5,7,9]), eval("1,2,3 4,5,6 :: add")) }
+	}
+	mod sub {
+		use super::*;
+		#[test] fn int_int() { assert_eq!(Int(2-3), eval("2 3 :: sub")) }
+		#[test] fn arr_int() { assert_eq!(Value::from([-1,0,1]), eval("1,2,3 2 :: sub")) }
+		#[test] fn int_arr() { assert_eq!(Value::from([1,0,-1]), eval("2 1,2,3 :: sub")) }
+		#[test] fn arr_arr() { assert_eq!(Value::from([3,4,5]), eval("4,6,8 1,2,3 :: sub")) }
 	}
 
-	#[test] fn sub_int_int() { assert_eq!(Int(2-3), eval("2 3 :: sub")) }
 	#[test] fn neg_add() { assert_eq!(Int(-(2+2)), eval("2 2 :: neg add")) }
 	#[test] fn add_neg_arg_neg() { assert_eq!(Int(-2-3), eval("2 3 :: add neg _ neg")) }
 
