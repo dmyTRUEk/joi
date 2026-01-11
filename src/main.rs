@@ -284,6 +284,7 @@ enum Function {
 	CoDedupBy(Box<[Function; 2]>),
 	DedupBy(Box<[Function; 2]>),
 	// Divide(Box<[Function; 2]>),
+	Drop(Box<[Function; 2]>), // drop n first from array
 	Filter(Box<[Function; 2]>), // TODO: make two: filter-leave and filter-remove or something like that
 	// Find(Box<[Function; 2]>),
 	// IndexOf/Position
@@ -306,6 +307,7 @@ enum Function {
 	Running(Box<[Function; 2]>), // like running sum, `running_max`
 	Running2(Box<[Function; 2]>), // like running sum, `running_max`
 	Subtract(Box<[Function; 2]>),
+	Take(Box<[Function; 2]>), // take n first from array
 	Windows(Box<[Function; 2]>),
 	Zip(Box<[Function; 2]>),
 
@@ -372,6 +374,7 @@ impl Function {
 			"chunks" => Chunks(ab!()),
 			"codedup-by" => CoDedupBy(ab!()),
 			"dedup-by" => DedupBy(ab!()),
+			"drop" => Drop(ab!()),
 			"!=" => IsNotEqual(ab!()),
 			"<" => IsLess(ab!()),
 			"<=" => IsLessEqual(ab!()),
@@ -389,6 +392,7 @@ impl Function {
 			"running" => Running(ab!()),
 			"running2" => Running2(ab!()),
 			"sub" => Subtract(ab!()),
+			"take" => Take(ab!()),
 			"windows" => Windows(ab!()),
 			"zip" => Zip(ab!()),
 
@@ -666,6 +670,15 @@ impl Function {
 					_ => panic!("dedup-by: expected array as second arg")
 				}
 			}
+			Drop(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Array(arr), Int(n)) | (Int(n), Array(arr)) => {
+						Array(arr[n.try_into().unwrap()..].to_vec())
+					}
+					_ => panic!("drop: expected int and array")
+				}
+			}
 			IsEqual(ab) => {
 				let [a, b] = *ab.clone();
 				match (a.eval_(args), b.eval_(args)) {
@@ -865,6 +878,15 @@ impl Function {
 						let res = a.into_iter().zip(b).map(|(a, b)| Int(a - b)).collect();
 						Array(res)
 					}
+				}
+			}
+			Take(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Array(arr), Int(n)) | (Int(n), Array(arr)) => {
+						Array(arr[..n.try_into().unwrap()].to_vec())
+					}
+					_ => panic!("drop: expected int and array")
 				}
 			}
 			Windows(ab) => {
@@ -1303,6 +1325,17 @@ mod eval {
 				#[test] fn _5_3_8_0_9_1_2_0_9_6_7_4() { assert_eq!(Int(7), eval("5,3,8,0,9,1,2,0,9,6,7,4 :: iminl")) }
 			}
 		}
+	}
+
+	mod drop {
+		use super::*;
+		#[test] fn _3__3_1_4_1_5() { assert_eq!(Value::from([1,5]), eval("3,1,4,1,5 :: drop 3")) }
+		#[test] fn _3_1_4_1_5__3() { assert_eq!(Value::from([1,5]), eval("3,1,4,1,5 :: drop _ 3")) }
+	}
+	mod take {
+		use super::*;
+		#[test] fn _3__3_1_4_1_5() { assert_eq!(Value::from([3,1,4]), eval("3,1,4,1,5 :: take 3")) }
+		#[test] fn _3_1_4_1_5__3() { assert_eq!(Value::from([3,1,4]), eval("3,1,4,1,5 :: take _ 3")) }
 	}
 }
 
