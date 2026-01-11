@@ -252,7 +252,7 @@ enum Function {
 	Dedup(Box<Function>),
 	// Decrease(Box<Function>),
 	First(Box<Function>),
-	// Head(Box<Function>), // everything but last
+	Head(Box<Function>), // everything but last
 	Identity(Box<Function>),
 	// Increase(Box<Function>),
 	IndexOfMaxFirst(Box<Function>),
@@ -275,7 +275,7 @@ enum Function {
 	Square(Box<Function>),
 	SquareRoot(Box<Function>),
 	Sum(Box<Function>),
-	// Tail(Box<Function>), // everything but first
+	Tail(Box<Function>), // everything but first
 	Transpose(Box<Function>),
 
 	Add(Box<[Function; 2]>),
@@ -350,6 +350,7 @@ impl Function {
 			"codedup" => CoDedup(a!()),
 			"dedup" => Dedup(a!()),
 			"first" => First(a!()),
+			"head" => Head(a!()),
 			"id" => Identity(a!()),
 			"imaxf" => IndexOfMaxFirst(a!()),
 			"imaxl" => IndexOfMaxLast(a!()),
@@ -367,6 +368,7 @@ impl Function {
 			"sq" => Square(a!()),
 			"sqrt" => SquareRoot(a!()),
 			"sum" => Sum(a!()),
+			"tail" => Tail(a!()),
 			"transpose" => Transpose(a!()),
 
 			"add" => Add(ab!()),
@@ -478,6 +480,12 @@ impl Function {
 					_ => panic!("first: expected array")
 				}
 			}
+			Head(a) => {
+				match a.eval_(args) {
+					Array(arr) => Array(arr[..arr.len()-1].to_vec()),
+					_ => panic!("head: expected array")
+				}
+			}
 			Identity(a) => {
 				a.eval_(args)
 			}
@@ -584,6 +592,12 @@ impl Function {
 							})
 					),
 					_ => panic!("sum: cant sum not array")
+				}
+			}
+			Tail(a) => {
+				match a.eval_(args) {
+					Array(arr) => Array(arr[1..].to_vec()),
+					_ => panic!("tail: expected array")
 				}
 			}
 			Transpose(a) => {
@@ -1336,6 +1350,15 @@ mod eval {
 		use super::*;
 		#[test] fn _3__3_1_4_1_5() { assert_eq!(Value::from([3,1,4]), eval("3,1,4,1,5 :: take 3")) }
 		#[test] fn _3_1_4_1_5__3() { assert_eq!(Value::from([3,1,4]), eval("3,1,4,1,5 :: take _ 3")) }
+	}
+
+	mod head {
+		use super::*;
+		#[test] fn _9_8_7_6_5() { assert_eq!(Value::from([9,8,7,6]), eval("9,8,7,6,5 :: head")) }
+	}
+	mod tail {
+		use super::*;
+		#[test] fn _9_8_7_6_5() { assert_eq!(Value::from([8,7,6,5]), eval("9,8,7,6,5 :: tail")) }
 	}
 }
 
