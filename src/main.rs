@@ -250,11 +250,11 @@ enum Function {
 	CoDedup(Box<Function>),
 	// CubeRoot(Box<Function>),
 	Dedup(Box<Function>),
-	// Decrease(Box<Function>),
+	Decrease(Box<Function>),
 	First(Box<Function>),
 	Head(Box<Function>), // everything but last
 	Identity(Box<Function>),
-	// Increase(Box<Function>),
+	Increase(Box<Function>),
 	IndexOfMaxFirst(Box<Function>),
 	IndexOfMaxLast(Box<Function>),
 	IndexOfMinFirst(Box<Function>),
@@ -350,6 +350,7 @@ impl Function {
 
 			"abs" => Absolute(a!()),
 			"codedup" => CoDedup(a!()),
+			"dec" => Decrease(a!()),
 			"dedup" => Dedup(a!()),
 			"first" => First(a!()),
 			"head" => Head(a!()),
@@ -358,6 +359,7 @@ impl Function {
 			"imaxl" => IndexOfMaxLast(a!()),
 			"iminf" => IndexOfMinFirst(a!()),
 			"iminl" => IndexOfMinLast(a!()),
+			"inc" => Increase(a!()),
 			"is-even" => IsEven(a!()),
 			"is-pos" => IsPositive(a!()),
 			"last" => Last(a!()),
@@ -475,6 +477,12 @@ impl Function {
 					_ => panic!("codedup: expected array")
 				}
 			}
+			Decrease(a) => {
+				match a.eval_(args) {
+					Int(n) => Int(n - 1),
+					Array(_) => todo!()
+				}
+			}
 			Dedup(a) => {
 				match a.eval_(args) {
 					Array(mut arr) => {
@@ -498,6 +506,12 @@ impl Function {
 			}
 			Identity(a) => {
 				a.eval_(args)
+			}
+			Increase(a) => {
+				match a.eval_(args) {
+					Int(n) => Int(n + 1),
+					Array(_) => todo!()
+				}
 			}
 			IndexOfMaxFirst(a) => {
 				match a.eval_(args) {
@@ -1385,6 +1399,15 @@ mod eval {
 	mod reverse {
 		use super::*;
 		#[test] fn _3_1_4_1_5() { assert_eq!(Value::from([5,1,4,1,3]), eval("3,1,4,1,5 :: rev")) }
+	}
+
+	mod dec {
+		use super::*;
+		#[test] fn _42() { assert_eq!(Int(41), eval("42 :: dec")) }
+	}
+	mod inc {
+		use super::*;
+		#[test] fn _42() { assert_eq!(Int(43), eval("42 :: inc")) }
 	}
 }
 
