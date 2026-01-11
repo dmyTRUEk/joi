@@ -90,6 +90,22 @@ impl Value {
 			)
 		}
 	}
+	fn try_as_int(self) -> Option<i64> {
+		use Value::*;
+		match self {
+			Int(n) => Some(n),
+			Array(_) => None,
+		}
+	}
+	fn try_as_ints(self) -> Option<Vec<i64>> {
+		use Value::*;
+		let Array(arr) = self else { return None };
+		Some(
+			arr.into_iter()
+				.map(|v| v.try_as_int().unwrap())
+				.collect()
+		)
+	}
 }
 impl From<&str> for Value {
 	fn from(s: &str) -> Self {
@@ -227,6 +243,8 @@ enum Function {
 	// IsNegative(Box<Function>),
 	// IsZero(Box<Function>),
 	Last(Box<Function>),
+	Max(Box<Function>),
+	Min(Box<Function>),
 	Negate(Box<Function>),
 	Not(Box<Function>),
 	// Product(Box<Function>),
@@ -237,8 +255,6 @@ enum Function {
 	Sum(Box<Function>),
 	// Tail(Box<Function>), // everything but first
 	Transpose(Box<Function>),
-
-	// Max/Min: 1 or 2 args?
 
 	Add(Box<[Function; 2]>),
 	At(Box<[Function; 2]>),
@@ -258,6 +274,8 @@ enum Function {
 	IsNotEqual(Box<[Function; 2]>),
 	// Join(Box<[Function; 2]>),
 	Map(Box<[Function; 2]>),
+	Max2(Box<[Function; 2]>),
+	Min2(Box<[Function; 2]>),
 	Modulo(Box<[Function; 2]>),
 	ModuloFake(Box<[Function; 2]>),
 	// Multiply(Box<[Function; 2]>),
@@ -306,6 +324,8 @@ impl Function {
 			"is-even" => IsEven(a!()),
 			"is-pos" => IsPositive(a!()),
 			"last" => Last(a!()),
+			"max" => Max(a!()),
+			"min" => Min(a!()),
 			"neg" => Negate(a!()),
 			"not" => Not(a!()),
 			"range" => Range(a!()),
@@ -328,6 +348,8 @@ impl Function {
 			">=" => IsGreaterEqual(ab!()),
 			"filter" => Filter(ab!()),
 			"map" => Map(ab!()),
+			"max2" => Max2(ab!()),
+			"min2" => Min2(ab!()),
 			"mod" => Modulo(ab!()),
 			"modf" => ModuloFake(ab!()),
 			"reduce" => Reduce(ab!()),
@@ -417,6 +439,18 @@ impl Function {
 				match a.eval_(args) {
 					Array(mut arr) => arr.remove(arr.len()-1),
 					_ => panic!("last: expected array")
+				}
+			}
+			Max(a) => {
+				match a.eval_(args) {
+					arr @ Array(_) => Int(arr.try_as_ints().unwrap().into_iter().max().unwrap()),
+					_ => panic!("max: expected array")
+				}
+			}
+			Min(a) => {
+				match a.eval_(args) {
+					arr @ Array(_) => Int(arr.try_as_ints().unwrap().into_iter().min().unwrap()),
+					_ => panic!("min: expected array")
 				}
 			}
 			Negate(a) => {
@@ -607,6 +641,20 @@ impl Function {
 						)
 					}
 					Int(_) => panic!("map: cant use on int")
+				}
+			}
+			Max2(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Int(a), Int(b)) => Int(a.max(b)),
+					_ => panic!("max2: expected int and int")
+				}
+			}
+			Min2(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Int(a), Int(b)) => Int(a.min(b)),
+					_ => panic!("min2: expected int and int")
 				}
 			}
 			Modulo(ab) => {
@@ -976,6 +1024,27 @@ mod eval {
 		use super::*;
 		#[test] fn _42_10() { assert_eq!(Int(2), eval("42 10 :: modf")) }
 		#[test] fn _m42_10() { assert_eq!(Int(-2), eval("-42 10 :: modf")) }
+	}
+
+	mod max {
+		use super::*;
+		#[test] fn _5_3_8_0_9_1_2_6_7_4() { assert_eq!(Int(9), eval("5,3,8,0,9,1,2,6,7,4 :: max")) }
+	}
+	mod min {
+		use super::*;
+		#[test] fn _5_3_8_0_9_1_2_6_7_4() { assert_eq!(Int(0), eval("5,3,8,0,9,1,2,6,7,4 :: min")) }
+	}
+	mod max2 {
+		use super::*;
+		#[test] fn _0__0() { assert_eq!(Int(0), eval("0 0 :: max2")) }
+		#[test] fn _0__9() { assert_eq!(Int(9), eval("0 9 :: max2")) }
+		#[test] fn _9__9() { assert_eq!(Int(9), eval("9 9 :: max2")) }
+	}
+	mod min2 {
+		use super::*;
+		#[test] fn _0__0() { assert_eq!(Int(0), eval("0 0 :: min2")) }
+		#[test] fn _0__9() { assert_eq!(Int(0), eval("0 9 :: min2")) }
+		#[test] fn _9__9() { assert_eq!(Int(9), eval("9 9 :: min2")) }
 	}
 }
 
