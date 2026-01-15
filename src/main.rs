@@ -50,12 +50,17 @@ struct CliArgs {
 
 	// TODO: execute from file by filename
 
+	// TODO: program/data mode: input::program or program::input
+
+	// TODO: composition/haskell mode: a b c = a(b(c)) or a b c = a(b, c) (like in haskell)
+
 	program: Vec<String>,
 }
 
 
 
 fn main() {
+	// TODO?: dont use clap?
 	let CliArgs {
 		// debug_parsing,
 		// debug_eval,
@@ -224,6 +229,7 @@ impl Display for Value {
 enum Function {
 	Argument,
 	Literal(Value),
+	// TODO: args refered by name aka non-tacit: alpha (first arg), beta, gamme, ..., omega (last arg)
 
 	// BIRDS FROM CH:
 	// src: combinatorylogic.com/table.html
@@ -330,7 +336,7 @@ enum Function {
 	Zip(Box<[Function; 2]>),
 
 	// Slice
-	// SplitAtIndex/Function
+	// SplitAtIndex/Function: impossible bc cant make it in two vars/args?
 
 	// Fold(Box<[Function; 3]>),
 	If(Box<[Function; 3]>),
@@ -911,6 +917,7 @@ impl Function {
 				let [f, x] = *fx.clone();
 				match x.eval_(args) {
 					Array(arr) => Array(
+						// TODO(refactor): use scan?
 						arr.into_iter().fold(vec![], |mut acc, el| {
 							if acc.is_empty() {
 								vec![el]
