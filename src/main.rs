@@ -238,7 +238,7 @@ enum Function {
 	// Dove // D = f,g,x,y -> f(x, g(y))
 	// ZebraDove // Delta = f,g,x,y -> f(g(x), y)
 	Phoenix(Box<[Function; 4]>), // Phi = f,g,h,x -> f(g(x), h(x))
-	// Psi = f,g,x,y -> f(g(x), g(y))
+	Psi(Box<[Function; 4]>), // Psi = f,g,x,y -> f(g(x), g(y))
 	// Dickcissel // D1 = f,g,x,y,z -> f(x, y, g(z))
 	// Dovekie // D2 = f,g,h,x,y -> f(g(x), h(y))
 	// Eagle // E = f,g,h,x,y -> f(x, g(y,z))
@@ -366,6 +366,7 @@ impl Function {
 			"s" => Starling(abc!()),
 			"sigma" => VioletStarling(abc!()),
 			"phi" => Phoenix(abcd!()),
+			"psi" => Psi(abcd!()),
 			// my:
 			"s1" => Starling1(abcd!()),
 			"phi~" => UmbralPhoenix(abcde!()),
@@ -479,6 +480,14 @@ impl Function {
 				let gx = g.eval(vec![x.clone()]);
 				let hx = h.eval(vec![x]);
 				f.eval(vec![gx, hx])
+			}
+			Psi(fgxy) => {
+				let [f, g, x, y] = *fgxy.clone();
+				let x = x.eval_(args);
+				let y = y.eval_(args);
+				let gx = g.eval(vec![x]);
+				let gy = g.eval(vec![y]);
+				f.eval(vec![gx, gy])
 			}
 			// my:
 			Starling1(fgxy) => {
@@ -1447,6 +1456,11 @@ mod eval {
 		use super::*;
 		#[test] fn add_sq_inc_dec() { assert_eq!(Int(6*6 + 4*4), eval("5 :: phi~ add _ _ sq _ inc _ dec _")) }
 		#[test] fn sub_sq_inc_dec() { assert_eq!(Int(6*6 - 4*4), eval("5 :: phi~ sub _ _ sq _ inc _ dec _")) }
+	}
+
+	mod psi {
+		use super::*;
+		#[test] fn add_sq() { assert_eq!(Int(25), eval("3 4 :: psi add _ _ sq")) }
 	}
 }
 
