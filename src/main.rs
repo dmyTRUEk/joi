@@ -1274,7 +1274,8 @@ mod eval {
 	mod transpose {
 		use super::*;
 		#[test] fn _1_2_3__4_5_6() { assert_eq!(Value::from([[1,4],[2,5],[3,6]]), eval("1,2,3__4,5,6 :: transpose")) }
-		#[test] fn _1_2__3_4__5_6() { assert_eq!(Value::from([[1,2,3],[4,5,6]]), eval("1,4__2,5__3,6 :: transpose")) }
+		#[test] fn _1_2__3_4__5_6() { assert_eq!(Value::from([[1,3,5],[2,4,6]]), eval("1,2__3,4__5,6 :: transpose")) }
+		#[test] fn _1_2_3__4_5_6__7_8_9() { assert_eq!(Value::from([[1,4,7],[2,5,8],[3,6,9]]), eval("1,2,3__4,5,6__7,8,9 :: transpose")) }
 	}
 
 	mod abs {
