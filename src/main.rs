@@ -44,15 +44,13 @@ struct CliArgs {
 	#[arg(short='d', long, default_value_t=false)]
 	debug: bool,
 
-	// TODO?
-	// #[arg(short='i', long, default_value_t=false)]
-	// input_at_the_end: bool,
-
-	// TODO: execute from file by filename
+	// TODO: execute program from file
 
 	// TODO: program/data mode: input::program or program::input
 
 	// TODO: composition/haskell mode: a b c = a(b(c)) or a b c = a(b, c) (like in haskell)
+
+	// TODO: multithread
 
 	program: Vec<String>,
 }
@@ -229,7 +227,7 @@ impl Display for Value {
 enum Function {
 	Argument,
 	Literal(Value),
-	// TODO: args refered by name aka non-tacit: alpha (first arg), beta, gamme, ..., omega (last arg)
+	// TODO: args refered by name (aka non-tacit): alpha (first arg), beta, gamma, ..., omega (last arg)
 
 	// BIRDS FROM CH:
 	// src: combinatorylogic.com/table.html
@@ -1038,6 +1036,7 @@ fn eval(program: &str) -> Value {
 }
 
 fn eval_(program: &str, debug_parsing: bool, _debug_eval: bool) -> Value {
+	// TODO: functions (and consts?) support
 	let tmp = program.split("::").collect::<Vec<_>>();
 	let [args, fn_tokens] = tmp.as_slice() else { panic!("expected exactly one `::`") };
 	let args: Vec<Value> = args
