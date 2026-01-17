@@ -292,7 +292,7 @@ enum Function {
 	// IsNegative(Box<Function>),
 	// IsZero(Box<Function>),
 	Last(Box<Function>),
-	// Length(Box<Function>),
+	Length(Box<Function>),
 	Max(Box<Function>),
 	Min(Box<Function>),
 	Negate(Box<Function>),
@@ -408,6 +408,7 @@ impl Function {
 			"is-even" => IsEven(a!()),
 			"is-pos" => IsPositive(a!()),
 			"last" => Last(a!()),
+			"len" => Length(a!()),
 			"max" => Max(a!()),
 			"min" => Min(a!()),
 			"neg" => Negate(a!()),
@@ -624,6 +625,12 @@ impl Function {
 				match a.eval_(args) {
 					Array(mut arr) => arr.remove(arr.len()-1),
 					_ => panic!("last: expected array")
+				}
+			}
+			Length(a) => {
+				match a.eval_(args) {
+					Array(arr) => Int(arr.len() as i64),
+					Int(_) => panic!("len: cant use on int")
 				}
 			}
 			Max(a) => {
@@ -1502,6 +1509,15 @@ mod eval {
 	mod psi {
 		use super::*;
 		#[test] fn add_sq() { assert_eq!(Int(25), eval("3 4 :: psi add _ _ sq")) }
+	}
+
+	mod length {
+		use super::*;
+		#[test] fn _0() { assert_eq!(Int(0), eval(", :: len")) }
+		#[test] fn _1() { assert_eq!(Int(1), eval("9, :: len")) }
+		#[test] fn _2() { assert_eq!(Int(2), eval("9,9 :: len")) }
+		#[test] fn _3() { assert_eq!(Int(3), eval("9,9,9 :: len")) }
+		#[test] fn _4() { assert_eq!(Int(4), eval("9,9,9,9 :: len")) }
 	}
 }
 
