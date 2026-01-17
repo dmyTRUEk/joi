@@ -713,12 +713,11 @@ impl Function {
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(_a), Int(_b)) => panic!("at: cant index into int"),
 					(Array(arr), Int(i)) => arr[usize::try_from(i).unwrap()].clone(),
-					// (Int(i), Array(arr)) => arr[usize::try_from(i).unwrap()].clone(), // TODO: enable?
+					(Int(i), Array(arr)) => arr[usize::try_from(i).unwrap()].clone(),
 					(Array(arr), Array(i)) => Array(i.iter().map(|i| match i {
 						Int(i) => arr[usize::try_from(*i).unwrap()].clone(),
 						_ => panic!("at: cant index array by array in array")
 					}).collect()),
-					_ => panic!("at: wrong args order")
 				}
 			}
 			Chunks(ab) => {
