@@ -336,7 +336,7 @@ enum Function {
 	// Slice
 	// SplitAtIndex/Function: impossible bc cant make it in two vars/args?
 
-	// Fold(Box<[Function; 3]>),
+	Fold(Box<[Function; 3]>),
 	If(Box<[Function; 3]>),
 }
 impl Function {
@@ -430,6 +430,7 @@ impl Function {
 			"windows" => Windows(ab!()),
 			"zip" => Zip(ab!()),
 
+			"fold" => Fold(abc!()),
 			"if" => If(abc!()),
 
 			t => panic!("unknown token: `{t}`")
@@ -1004,6 +1005,17 @@ impl Function {
 			}
 
 			// FUNCTIONS ARITY 3
+			Fold(ifx) => {
+				let [i, f, x] = *ifx.clone();
+				let i = i.eval_(args);
+				match x.eval_(args) {
+					Array(arr) => {
+						arr.into_iter()
+							.fold(i, |acc, el| f.eval(vec![acc, el]))
+					}
+					Int(_) => panic!("fold: cant use on int")
+				}
+			}
 			If(abc) => {
 				let [a, b, c] = *abc.clone();
 				let cond = a.eval_(args);
@@ -1357,6 +1369,11 @@ mod eval {
 		#[test] fn int_arr() { assert_eq!(Value::from([3,4,5,6]), eval("3 4,5,6 :: join")) }
 		#[test] fn arr_int() { assert_eq!(Value::from([3,4,5,6]), eval("3,4,5 6 :: join")) }
 		#[test] fn arr_arr() { assert_eq!(Value::from([3,4,5,6,7]), eval("3,4,5 6,7 :: join")) }
+	}
+
+	mod fold {
+		use super::*;
+		#[test] fn _1_2_3_4_5__100_add() { assert_eq!(Int(115), eval("1,2,3,4,5 :: fold 100 add")) }
 	}
 
 	mod starling1 {
