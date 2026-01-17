@@ -269,10 +269,16 @@ enum Function {
 
 	Absolute(Box<Function>),
 	CoDedup(Box<Function>),
+	// Combinations(Box<Function>),
+	// CombinationsWithReplacement(Box<Function>),
 	// CubeRoot(Box<Function>),
+	// Digits(Box<Function>),
 	Dedup(Box<Function>),
 	Decrease(Box<Function>),
+	// Duplicates(Box<Function>),
 	First(Box<Function>),
+	// Flatten(Box<Function>),
+	// FromDigits(Box<Function>),
 	Head(Box<Function>), // everything but last
 	Identity(Box<Function>),
 	Increase(Box<Function>),
@@ -286,10 +292,13 @@ enum Function {
 	// IsNegative(Box<Function>),
 	// IsZero(Box<Function>),
 	Last(Box<Function>),
+	// Length(Box<Function>),
 	Max(Box<Function>),
 	Min(Box<Function>),
 	Negate(Box<Function>),
 	Not(Box<Function>),
+	// Permutations(Box<Function>),
+	// PowerSet(Box<Function>),
 	// Product(Box<Function>),
 	Range(Box<Function>),
 	Reverse(Box<Function>),
@@ -299,10 +308,13 @@ enum Function {
 	Sum(Box<Function>),
 	Tail(Box<Function>), // everything but first
 	Transpose(Box<Function>),
+	// Unique(Box<Function>),
 
 	Add(Box<[Function; 2]>),
+	// Append(Box<[Function; 2]>),
 	At(Box<[Function; 2]>),
 	Chunks(Box<[Function; 2]>),
+	// CartesianProduct(Box<[Function; 2]>),
 	CoDedupBy(Box<[Function; 2]>),
 	DedupBy(Box<[Function; 2]>),
 	// Divide(Box<[Function; 2]>),
@@ -310,21 +322,24 @@ enum Function {
 	Filter(Box<[Function; 2]>), // TODO: make two: filter-leave and filter-remove or something like that
 	// Find(Box<[Function; 2]>),
 	// IndexOf/Position
-	// Insert(Box<[Function; 2]>),
+	// Interleave(Box<[Function; 2]>), // unite with Intersperce?
+	// Intersperce(Box<[Function; 2]>), // unite with Interleave?
 	IsEqual(Box<[Function; 2]>),
 	IsGreater(Box<[Function; 2]>),
 	IsGreaterEqual(Box<[Function; 2]>),
 	IsLess(Box<[Function; 2]>),
 	IsLessEqual(Box<[Function; 2]>),
 	IsNotEqual(Box<[Function; 2]>),
-	Join(Box<[Function; 2]>),
+	Join(Box<[Function; 2]>), // aka chain
 	Map(Box<[Function; 2]>),
 	Max2(Box<[Function; 2]>),
 	Min2(Box<[Function; 2]>),
 	Modulo(Box<[Function; 2]>),
 	ModuloFake(Box<[Function; 2]>),
 	// Multiply(Box<[Function; 2]>),
+	// Prepend(Box<[Function; 2]>),
 	Reduce(Box<[Function; 2]>),
+	// Repeat(Box<[Function; 2]>),
 	// Rotate(Box<[Function; 2]>),
 	Scan(Box<[Function; 2]>), // like running sum
 	Scan2(Box<[Function; 2]>), // change name with `scan`?
@@ -337,7 +352,10 @@ enum Function {
 	// SplitAtIndex/Function: impossible bc cant make it in two vars/args?
 
 	Fold(Box<[Function; 3]>),
+	// FoldL(Box<[Function; 3]>),
+	// FoldR(Box<[Function; 3]>),
 	If(Box<[Function; 3]>),
+	// Insert(Box<[Function; 3]>),
 }
 impl Function {
 	fn from_str(tokens: &str) -> Self {
