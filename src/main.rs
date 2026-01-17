@@ -76,153 +76,6 @@ fn main() {
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-enum Value {
-	Int(i64),
-	// TODO: rename into List?
-	Array(Vec<Value>),
-}
-impl Value {
-	fn deep_map(self, f: fn(i64) -> Self) -> Self {
-		use Value::*;
-		match self {
-			Int(n) => f(n),
-			Array(arr) => Array(
-				arr.into_iter()
-					.map(|el| el.deep_map(f))
-					.collect()
-			)
-		}
-	}
-	fn try_as_int(self) -> Option<i64> {
-		use Value::*;
-		match self {
-			Int(n) => Some(n),
-			Array(_) => None,
-		}
-	}
-	fn try_as_ints(self) -> Option<Vec<i64>> {
-		use Value::*;
-		let Array(arr) = self else { return None };
-		Some(
-			arr.into_iter()
-				.map(|v| v.try_as_int().unwrap())
-				.collect()
-		)
-	}
-}
-impl From<&str> for Value {
-	fn from(s: &str) -> Self {
-		use Value::*;
-		// dbg!(s);
-		let s = s.trim();
-		if s.is_empty() { return Array(vec![]) }
-		if s.contains("____") {
-			Array(
-				s
-					.split("____")
-					.filter(|el| !el.is_empty())
-					.map(Value::from)
-					.collect()
-			)
-		}
-		else if s.contains("__") {
-			Array(
-				s
-					.split("__")
-					// .filter(|el| !el.is_empty())
-					.map(Value::from)
-					.collect()
-			)
-		}
-		else if s.contains(',') {
-			Array(
-				s
-					.split(',')
-					.filter(|el| !el.is_empty())
-					.map(Value::from)
-					.collect()
-			)
-		}
-		else {
-			Int(
-				s
-					// .trim()
-					.parse()
-					.unwrap()
-			)
-		}
-	}
-}
-impl<const N: usize> From<[i64; N]> for Value {
-	fn from(arr: [i64; N]) -> Self {
-		use Value::*;
-		Array(arr.map(Int).to_vec())
-	}
-}
-// impl From<&[i64]> for Value {
-// 	fn from(arr: &[i64]) -> Self {
-// 		use Value::*;
-// 		Array(arr.iter().map(|n| Int(*n)).collect())
-// 	}
-// }
-// impl<const N: usize> From<[&[i64]; N]> for Value {
-// 	fn from(arr: [&[i64]; N]) -> Self {
-// 		use Value::*;
-// 		// Array(arr.map(Value::from).to_vec())
-// 		Array(arr.map(|s| Value::from(s.to_vec())).to_vec()) // better?
-// 	}
-// }
-impl<const N: usize, const M: usize> From<[[i64; M]; N]> for Value {
-	fn from(arr: [[i64; M]; N]) -> Self {
-		use Value::*;
-		Array(arr.map(Value::from).to_vec())
-	}
-}
-impl<const N: usize, const M: usize, const K: usize> From<[[[i64; K]; M]; N]> for Value {
-	fn from(arr: [[[i64; K]; M]; N]) -> Self {
-		use Value::*;
-		Array(arr.map(Value::from).to_vec())
-	}
-}
-impl From<Vec<i64>> for Value {
-	fn from(arr: Vec<i64>) -> Self {
-		use Value::*;
-		Array(arr.iter().map(|n| Int(*n)).collect())
-	}
-}
-impl<const N: usize> From<[Vec<i64>; N]> for Value {
-	fn from(arr: [Vec<i64>; N]) -> Self {
-		use Value::*;
-		Array(arr.map(Value::from).to_vec())
-	}
-}
-impl Display for Value {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		use Value::*;
-		match self {
-			Int(n) => {
-				write!(f, "{n}")
-			}
-			Array(arr) => {
-				write!(f, "[")?;
-				let mut it = arr.iter();
-				if let Some(el) = it.next() {
-					write!(f, "{el}")?;
-					for el in it {
-						write!(f, ", {el}")?;
-					}
-				}
-				write!(f, "]")
-			}
-		}
-	}
-}
-
-
-
-
-
 #[derive(Debug, Clone)]
 enum Function {
 	Argument,
@@ -1059,6 +912,164 @@ impl Function {
 			eprintln!("{self:?}: {res}");
 		}
 		res
+	}
+}
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+enum Value {
+	Int(i64),
+	// TODO: rename into List?
+	Array(Vec<Value>),
+}
+impl Value {
+	fn deep_map(self, f: fn(i64) -> Self) -> Self {
+		use Value::*;
+		match self {
+			Int(n) => f(n),
+			Array(arr) => Array(
+				arr.into_iter()
+					.map(|el| el.deep_map(f))
+					.collect()
+			),
+		}
+	}
+	fn shallow_map(self, f: fn(Self) -> Self) -> Self {
+		use Value::*;
+		match self {
+			Array(arr) => Array(
+				arr.into_iter()
+					.map(f)
+					.collect()
+			),
+			Int(_) => unreachable!(),
+		}
+	}
+	fn try_as_int(self) -> Option<i64> {
+		use Value::*;
+		match self {
+			Int(n) => Some(n),
+			Array(_) => None,
+		}
+	}
+	fn try_as_ints(self) -> Option<Vec<i64>> {
+		use Value::*;
+		let Array(arr) = self else { return None };
+		Some(
+			arr.into_iter()
+				.map(|v| v.try_as_int().unwrap())
+				.collect()
+		)
+	}
+}
+impl From<&str> for Value {
+	fn from(s: &str) -> Self {
+		use Value::*;
+		// dbg!(s);
+		let s = s.trim();
+		if s.is_empty() { return Array(vec![]) }
+		if s.contains("____") {
+			Array(
+				s
+					.split("____")
+					.filter(|el| !el.is_empty())
+					.map(Value::from)
+					.collect()
+			)
+		}
+		else if s.contains("__") {
+			Array(
+				s
+					.split("__")
+					// .filter(|el| !el.is_empty())
+					.map(Value::from)
+					.collect()
+			)
+		}
+		else if s.contains(',') {
+			Array(
+				s
+					.split(',')
+					.filter(|el| !el.is_empty())
+					.map(Value::from)
+					.collect()
+			)
+		}
+		else {
+			Int(
+				s
+					// .trim()
+					.parse()
+					.unwrap()
+			)
+		}
+	}
+}
+impl<const N: usize> From<[i64; N]> for Value {
+	fn from(arr: [i64; N]) -> Self {
+		use Value::*;
+		Array(arr.map(Int).to_vec())
+	}
+}
+// impl From<&[i64]> for Value {
+// 	fn from(arr: &[i64]) -> Self {
+// 		use Value::*;
+// 		Array(arr.iter().map(|n| Int(*n)).collect())
+// 	}
+// }
+// impl<const N: usize> From<[&[i64]; N]> for Value {
+// 	fn from(arr: [&[i64]; N]) -> Self {
+// 		use Value::*;
+// 		// Array(arr.map(Value::from).to_vec())
+// 		Array(arr.map(|s| Value::from(s.to_vec())).to_vec()) // better?
+// 	}
+// }
+impl<const N: usize, const M: usize> From<[[i64; M]; N]> for Value {
+	fn from(arr: [[i64; M]; N]) -> Self {
+		use Value::*;
+		Array(arr.map(Value::from).to_vec())
+	}
+}
+impl<const N: usize, const M: usize, const K: usize> From<[[[i64; K]; M]; N]> for Value {
+	fn from(arr: [[[i64; K]; M]; N]) -> Self {
+		use Value::*;
+		Array(arr.map(Value::from).to_vec())
+	}
+}
+impl From<Vec<i64>> for Value {
+	fn from(arr: Vec<i64>) -> Self {
+		use Value::*;
+		Array(arr.iter().map(|n| Int(*n)).collect())
+	}
+}
+impl<const N: usize> From<[Vec<i64>; N]> for Value {
+	fn from(arr: [Vec<i64>; N]) -> Self {
+		use Value::*;
+		Array(arr.map(Value::from).to_vec())
+	}
+}
+impl Display for Value {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		use Value::*;
+		match self {
+			Int(n) => {
+				write!(f, "{n}")
+			}
+			Array(arr) => {
+				write!(f, "[")?;
+				let mut it = arr.iter();
+				if let Some(el) = it.next() {
+					write!(f, "{el}")?;
+					for el in it {
+						write!(f, ", {el}")?;
+					}
+				}
+				write!(f, "]")
+			}
+		}
 	}
 }
 
