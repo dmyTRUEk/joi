@@ -192,7 +192,7 @@ enum Function {
 	Min2(Box<[Function; 2]>),
 	Modulo(Box<[Function; 2]>),
 	ModuloFake(Box<[Function; 2]>),
-	// Multiply(Box<[Function; 2]>),
+	Multiply(Box<[Function; 2]>),
 	// Nor(Box<[Function; 2]>),
 	// Or(Box<[Function; 2]>),
 	// Prepend(Box<[Function; 2]>),
@@ -300,6 +300,7 @@ impl Function {
 			"min2" => Min2(ab!()),
 			"mod" => Modulo(ab!()),
 			"modf" => ModuloFake(ab!()),
+			"mul" => Multiply(ab!()),
 			"reduce" => Reduce(ab!()),
 			"scan" => Scan(ab!()),
 			"scan2" => Scan2(ab!()),
@@ -782,6 +783,24 @@ impl Function {
 				match (a.eval_(args), b.eval_(args)) {
 					(Int(a), Int(b)) => Int(a % b),
 					_ => panic!("modf: expected int and int")
+				}
+			}
+			Multiply(ab) => {
+				let [a, b] = *ab.clone();
+				match (a.eval_(args), b.eval_(args)) {
+					(Int(a), Int(b)) => Int(a * b),
+					(arr @ Array(_), Int(n)) | (Int(n), arr @ Array(_)) => {
+						let Some(arr) = arr.try_as_ints() else { panic!("mul: expected flat array of ints") };
+						let res = arr.into_iter().map(|a| Int(a * n)).collect();
+						Array(res)
+					}
+					(a @ Array(_), b @ Array(_)) => {
+						let Some(a) = a.try_as_ints() else { panic!("mul: expected flat array of ints as first arg") };
+						let Some(b) = b.try_as_ints() else { panic!("mul: expected flat array of ints as second arg") };
+						assert_eq!(a.len(), b.len(), "mul: expected arrays to have same length");
+						let res = a.into_iter().zip(b).map(|(a, b)| Int(a * b)).collect();
+						Array(res)
+					}
 				}
 			}
 			Reduce(fx) => {
@@ -1535,6 +1554,14 @@ mod eval {
 		#[test] fn _2() { assert_eq!(Int(2), eval("9,9 :: len")) }
 		#[test] fn _3() { assert_eq!(Int(3), eval("9,9,9 :: len")) }
 		#[test] fn _4() { assert_eq!(Int(4), eval("9,9,9,9 :: len")) }
+	}
+
+	mod mul {
+		use super::*;
+		#[test] fn int_int() { assert_eq!(Int(2*3), eval("2 3 :: mul")) }
+		#[test] fn arr_int() { assert_eq!(Value::from([2,4,6]), eval("1,2,3 2 :: mul")) }
+		#[test] fn int_arr() { assert_eq!(Value::from([2,4,6]), eval("2 1,2,3 :: mul")) }
+		#[test] fn arr_arr() { assert_eq!(Value::from([4,10,18]), eval("1,2,3 4,5,6 :: mul")) }
 	}
 }
 
