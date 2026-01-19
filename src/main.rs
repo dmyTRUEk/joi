@@ -128,6 +128,7 @@ enum Function {
 	// Digits(Box<Function>),
 	Dedup(Box<Function>),
 	Decrease(Box<Function>),
+	// Deltas(Box<Function>),
 	// Duplicates(Box<Function>),
 	First(Box<Function>),
 	// Flatten(Box<Function>),
@@ -164,6 +165,7 @@ enum Function {
 	// Unique(Box<Function>),
 
 	Add(Box<[Function; 2]>),
+	// And(Box<[Function; 2]>),
 	// Append(Box<[Function; 2]>),
 	At(Box<[Function; 2]>),
 	Chunks(Box<[Function; 2]>),
@@ -185,11 +187,14 @@ enum Function {
 	IsNotEqual(Box<[Function; 2]>),
 	Join(Box<[Function; 2]>), // aka chain
 	Map(Box<[Function; 2]>),
+	// MapAdjecent(Box<[Function; 2]>),
 	Max2(Box<[Function; 2]>),
 	Min2(Box<[Function; 2]>),
 	Modulo(Box<[Function; 2]>),
 	ModuloFake(Box<[Function; 2]>),
 	// Multiply(Box<[Function; 2]>),
+	// Nor(Box<[Function; 2]>),
+	// Or(Box<[Function; 2]>),
 	// Prepend(Box<[Function; 2]>),
 	Reduce(Box<[Function; 2]>),
 	// Repeat(Box<[Function; 2]>),
@@ -199,6 +204,7 @@ enum Function {
 	Subtract(Box<[Function; 2]>),
 	Take(Box<[Function; 2]>), // take n first from array
 	Windows(Box<[Function; 2]>),
+	// Xor(Box<[Function; 2]>),
 	Zip(Box<[Function; 2]>),
 
 	// Slice
